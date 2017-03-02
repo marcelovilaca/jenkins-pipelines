@@ -26,7 +26,7 @@ stage("Promote to QA?") {
 }
 
 
-stage("QA tests") {
+stage("Docker image") {
   node('generic'){
     step ([$class: 'CopyArtifact',
       projectName: 'iam-build',
@@ -38,28 +38,35 @@ stage("QA tests") {
     string(name: 'IMAGE_NAME', value: "${image_name}"),
     string(name: 'TAG', value: "${image_tag}")
   ]
+}
 
-  step('deployment tests'){
-    parallel(
-        "develop-chrome": {
-          build job: 'iam-deployment-test',
-          parameters: [
-            string(name: 'BRANCH', value: '${params.BRANCH}'),
-            string(name: 'BROWSER', value: 'chrome'),
-            string(name: 'IAM_IMAGE', value: "${image_name}:${image_tag}"),
-          ]
-        },
-        "develop-firefox": {
-          build job: 'iam-deployment-test',
-          parameters: [
-            string(name: 'BRANCH', value: '${params.BRANCH}'),
-            string(name: 'BROWSER', value: 'firefox'),
-            string(name: 'IAM_IMAGE', value: "${image_name}:${image_tag}"),
-          ]
-        },
-        )
+
+stage("Selenium testsuite"){
+  def test_chrome
+  def test_ff
+
+  parallel(
+      "develop-chrome": {
+        test_chrome = build job: 'iam-deployment-test', propagate: false,
+        parameters: [
+          string(name: 'BRANCH', value: '${params.BRANCH}'),
+          string(name: 'BROWSER', value: 'chrome'),
+          string(name: 'IAM_IMAGE', value: "${image_name}:${image_tag}"),
+        ]
+      },
+      "develop-firefox": {
+        test_ff = build job: 'iam-deployment-test', propagate: false,
+        parameters: [
+          string(name: 'BRANCH', value: '${params.BRANCH}'),
+          string(name: 'BROWSER', value: 'firefox'),
+          string(name: 'IAM_IMAGE', value: "${image_name}:${image_tag}"),
+        ]
+      },
+      )
+
+  if("FAILED".equals(test_chrome.result) && "FAILED".equals(test_ff.result)) {
+    sh "exit 1"
   }
-
 }
 
 

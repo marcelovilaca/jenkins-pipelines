@@ -38,7 +38,7 @@ stage('test'){
         node('maven'){
           dir('/iam'){
             unstash 'code'
-            withSonarQubeEnv{ sh "mvn ${SONAR_MAVEN_GOAL} -Dsonar.host.url=${SONAR_HOST_URL}" }
+            withSonarQubeEnv{ sh "mvn ${SONAR_MAVEN_GOAL} -Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.login=${SONAR_AUTH_TOKEN}" }
           }
         }
       },
