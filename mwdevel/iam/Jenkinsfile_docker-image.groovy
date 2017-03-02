@@ -15,17 +15,18 @@ stage('build'){
   node('docker'){
 
     git branch: 'master', url: 'https://github.com/marcocaberletti/iam-deployment-test.git'
+
+    step ([$class: 'CopyArtifact',
+      projectName: 'iam-build',
+      filter: 'iam-login-service/target/iam-login-service.war',
+      target: 'iam/iam-be/files/iam-login-service.war'])
+
+    step ([$class: 'CopyArtifact',
+      projectName: 'iam-build',
+      filter: 'docker/saml-idp/idp/shibboleth-idp/metadata/idp-metadata.xml',
+      target: 'iam/iam-be/files/idp-metadata.xml'])
+
     dir('iam/iam-be/files'){
-      step ([$class: 'CopyArtifact',
-        projectName: 'iam-build',
-        filter: 'iam-login-service/target/iam-login-service.war',
-        target: '.'])
-
-      step ([$class: 'CopyArtifact',
-        projectName: 'iam-build',
-        filter: 'docker/saml-idp/idp/shibboleth-idp/metadata/idp-metadata.xml',
-        target: '.'])
-
       sh "pwd"
       sh "ls -lh"
     }
