@@ -18,13 +18,13 @@ stage('build'){
 
     step ([$class: 'CopyArtifact',
       projectName: 'iam-build',
-      filter: 'iam-login-service/target/iam-login-service.war',
-      target: 'iam/iam-be/files/iam-login-service.war'])
+      filter: 'iam-login-service/target/iam-login-service.war'])
 
     step ([$class: 'CopyArtifact',
       projectName: 'iam-build',
-      filter: 'docker/saml-idp/idp/shibboleth-idp/metadata/idp-metadata.xml',
-      target: 'iam/iam-be/files/idp-metadata.xml'])
+      filter: 'docker/saml-idp/idp/shibboleth-idp/metadata/idp-metadata.xml'])
+
+    sh "cp iam-login-service/target/iam-login-service.war docker/saml-idp/idp/shibboleth-idp/metadata/idp-metadata.xml iam/iam-be/files/"
 
     dir('iam/iam-be/files'){
       sh "pwd"
