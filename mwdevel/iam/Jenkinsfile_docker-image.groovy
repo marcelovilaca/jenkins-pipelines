@@ -23,6 +23,9 @@ stage('build'){
       step ([$class: 'CopyArtifact',
         projectName: 'iam-build',
         filter: 'docker/saml-idp/idp/shibboleth-idp/metadata/idp-metadata.xml'])
+
+      sh "pwd"
+      sh "ls -lh"
     }
 
     withEnv([
@@ -30,6 +33,7 @@ stage('build'){
       "IMAGE_NAME=${params.IMAGE_NAME}"
     ]){
       dir('iam/iam-be'){
+        sh "find -type f"
         sh "./build-image.sh"
         sh "./push-image.sh"
       }
