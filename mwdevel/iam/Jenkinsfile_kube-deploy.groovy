@@ -42,6 +42,7 @@ node("kubectl"){
           timeout(time: 5, unit: 'MINUTES') {  sh "kubectl rollout status deploy/iam --namespace=${NAMESPACE} | grep -q 'successfully rolled out'" }
         }catch(error){
           withEnv(["NAMESPACE=${namespace}",]){   sh "kubectl rollout undo deployment/iam --namespace=${NAMESPACE}"   }
+          currentBuild.result = 'FAILURE'
         }
       }
     }
