@@ -21,13 +21,15 @@ stage('build'){
   node('maven') {
     dir('/iam'){
       unstash 'code'
-      sh "sh utils/print-pom-version.sh > version.txt"
+      sh "echo v`sh utils/print-pom-version.sh`-latest > version.txt"
+      sh "git rev-parse --short HEAD > version-commit.txt"
       sh "mvn clean package -U -Dmaven.test.failure.ignore '-Dtest=!%regex[.*NotificationConcurrentTests.*]' -DfailIfNoTests=false"
 
       junit '**/target/surefire-reports/TEST-*.xml'
       archive 'iam-login-service/target/iam-login-service.war'
       archive 'docker/saml-idp/idp/shibboleth-idp/metadata/idp-metadata.xml'
       archive 'version.txt'
+      archive 'version-commit.txt'
     }
   }
 }

@@ -4,8 +4,8 @@
 properties([
   buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '5')),
   parameters([
-    string(name: 'TAG',        defaultValue: 'develop',                       description: '' ),
-    string(name: 'IMAGE_NAME', defaultValue: 'italiangrid/iam-login-service', description: '')
+    string(name: 'TAG',        defaultValue: 'develop',                     description: '' ),
+    string(name: 'IMAGE_NAME', defaultValue: 'indigoiam/iam-login-service', description: '')
   ]),
   pipelineTriggers([cron('@daily')]),
 ])
@@ -14,7 +14,7 @@ properties([
 stage('build'){
   node('docker'){
 
-    git branch: 'master', url: 'https://github.com/marcocaberletti/iam-deployment-test.git'
+    git branch: 'master', url: 'https://github.com/indigo-iam/iam.git'
 
     step ([$class: 'CopyArtifact',
       projectName: 'iam-build',
@@ -22,23 +22,22 @@ stage('build'){
 
     step ([$class: 'CopyArtifact',
       projectName: 'iam-build',
-      filter: 'docker/saml-idp/idp/shibboleth-idp/metadata/idp-metadata.xml'])
+      filter: 'version.txt'])
 
-    sh "cp iam-login-service/target/iam-login-service.war docker/saml-idp/idp/shibboleth-idp/metadata/idp-metadata.xml iam/iam-be/files/"
+    step ([$class: 'CopyArtifact',
+      projectName: 'iam-build',
+      filter: 'version-commit.txt'])
 
-    dir('iam/iam-be/files'){
-      sh "pwd"
-      sh "ls -lh"
-    }
+    def version = readFile('version.txt').trim()
+    def version_commit = readFile('version-commit.txt').trim()
 
     withEnv([
-      "TAG=${params.TAG}",
-      "IMAGE_NAME=${params.IMAGE_NAME}"
+      "IAM_LOGIN_SERVICE_VERSION=${params.TAG}",
+      "IAM_LOGIN_SERVICE_IMAGE=${params.IMAGE_NAME}"
     ]){
-      dir('iam/iam-be'){
-        sh "find -type f"
-        sh "./build-image.sh"
-        sh "./push-image.sh"
+      dir('iam-login-service/docker'){
+        sh "sh build-prod-image.sh"
+        sh "sh push-prod-image.sh"
       }
     }
   }
