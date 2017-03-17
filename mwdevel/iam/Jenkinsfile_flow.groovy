@@ -98,27 +98,38 @@ stage("Promote to QA?") {
 
 
 stage("Docker images") {
-  node('docker'){
-    unstash 'iam-code'
 
-    dir('iam-login-service/target') { unstash 'iam-war' }
+  parallel(
+      "iam-login-service": {
+        node('docker'){
+          unstash 'iam-code'
 
-    withEnv([
-      "IAM_LOGIN_SERVICE_VERSION=${image_tag}"
-    ]){
-      dir('iam-login-service/docker'){
-        sh "sh build-prod-image.sh"
-        sh "sh push-prod-image.sh"
+          dir('iam-login-service/target') { unstash 'iam-war' }
+
+          withEnv([
+            "IAM_LOGIN_SERVICE_VERSION=${image_tag}"
+          ]){
+            dir('iam-login-service/docker'){
+              sh "sh build-prod-image.sh"
+              sh "sh push-prod-image.sh"
+            }
+          }
+        }
+      },
+
+      "iam-test-client":{
+        node('docker'){
+          unstash 'iam-code'
+
+          dir('iam-test-client/target') { unstash 'iam-test-client-jar' }
+
+          dir('iam-test-client/docker'){
+            sh "sh build-prod-image.sh"
+            sh "sh push-prod-image.sh"
+          }
+        }
       }
-    }
-
-    dir('iam-test-client/target') { unstash 'iam-test-client-jar' }
-
-    dir('iam-test-client/docker'){
-      sh "sh build-prod-image.sh"
-      sh "sh push-prod-image.sh"
-    }
-  }
+      )
 }
 
 def iam_image = "${image_name}:${image_tag}-latest"
@@ -171,13 +182,13 @@ stage("Deploy to staging") {
   build job: 'iam-login-service-kube-deploy', parameters: [
     string(name: 'ENVIRONMENT', value: 'STAGING'),
     string(name: 'IAM_IMAGE',   value: "${registry}/${iam_image}"),
-    string(name: 'CONTEXT',     value: "${params.CONTEXT}"),
+    string(name: 'CONTEXT',     value: "prod"),
   ]
 
   build job: 'iam-test-client-kube-deploy', parameters: [
     string(name: 'ENVIRONMENT',           value: 'STAGING'),
     string(name: 'IAM_TEST_CLIENT_IMAGE', value: "${registry}/${test_client_image}"),
-    string(name: 'CONTEXT',               value: "${params.CONTEXT}"),
+    string(name: 'CONTEXT',               value: "prod"),
   ]
 }
 

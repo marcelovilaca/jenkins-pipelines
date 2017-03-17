@@ -53,11 +53,11 @@ node("kubectl"){
             kubectl ${CONTEXT_OPTS} apply -f test-client.ingress.yaml --namespace=${NAMESPACE}
           '''
 
-          timeout(time: 5, unit: 'MINUTES') {  sh "kubectl ${CONTEXT_OPTS} rollout status deploy/iam-test-client --namespace=${NAMESPACE} | grep -q 'successfully rolled out'" }
+          timeout(time: 5, unit: 'MINUTES') {  sh "kubectl ${context_opts} rollout status deploy/iam-test-client --namespace=${namespace} | grep -q 'successfully rolled out'" }
 
           currentBuild.result = 'SUCCESS'
         }catch(error){
-          withEnv(["NAMESPACE=${namespace}",]){   sh "kubectl ${CONTEXT_OPTS} rollout undo deployment/iam-test-client --namespace=${NAMESPACE}"   }
+          withEnv(["NAMESPACE=${namespace}",]){   sh "kubectl ${context_opts} rollout undo deployment/iam-test-client --namespace=${namespace}"   }
           currentBuild.result = 'FAILURE'
         }
       }
