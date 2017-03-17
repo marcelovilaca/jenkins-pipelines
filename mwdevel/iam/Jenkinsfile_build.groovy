@@ -3,16 +3,17 @@
 
 properties([
   buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '5')),
+  pipelineTriggers([cron('@daily')]),
   parameters([
+    string(name: 'REPO',   defaultValue: 'https://github.com/marcocaberletti/iam.git', description: '' ),
     string(name: 'BRANCH', defaultValue: 'develop', description: '' )
   ]),
-  pipelineTriggers([cron('@daily')]),
 ])
 
 
 stage("prepare"){
   node('generic') {
-    git branch: "${params.BRANCH}", url: 'https://github.com/marcocaberletti/iam.git'
+    git branch: "${params.BRANCH}", url: "${params.REPO}"
     stash name: 'code', useDefaultExcludes: false
   }
 }
