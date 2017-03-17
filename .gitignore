@@ -2,3 +2,5 @@
 .project
 bin/
 .settings/
+sonar-project.properties
+.scannerwork/

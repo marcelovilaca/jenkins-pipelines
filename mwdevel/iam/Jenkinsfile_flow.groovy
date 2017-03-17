@@ -7,7 +7,6 @@ properties([
     string(name: 'TESTSUITE_BRANCH', defaultValue: 'develop',                                                    description: 'Testsuite code repository'),
     choice(name: 'CONTEXT',          choices:      'dev\nprod',                                                  description: 'Infrastructure'),
   ]),
-  //  pipelineTriggers([cron('@daily')]),
 ])
 
 
@@ -262,6 +261,5 @@ stage("Production") {
     string(name: 'IAM_TEST_CLIENT_IMAGE', value: "${registry}/${test_client_image}"),
     string(name: 'CONTEXT',               value: "${params.CONTEXT}"),
   ]
-
 }
 

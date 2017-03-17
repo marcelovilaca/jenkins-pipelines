@@ -8,7 +8,6 @@ properties([
     string(name: 'IAM_IMAGE',   defaultValue: 'cloud-vm128.cloud.cnaf.infn.it/indigoiam/iam-login-service:v0.5.0-latest', description: ''),
     choice(name: 'CONTEXT',     choices:      'dev\nprod', description: 'Context infrastructure'),
   ]),
-  //  pipelineTriggers([cron('@daily')]),
 ])
 
 
