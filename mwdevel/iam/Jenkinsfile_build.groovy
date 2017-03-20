@@ -36,20 +36,26 @@ stage('build'){
 }
 
 stage('test'){
+
+  def cobertura_opts = 'cobertura:cobertura -Dmaven.test.failure.ignore \'-Dtest=!%regex[.*NotificationConcurrentTests.*]\' -DfailIfNoTests=false'
+  def checkstyle_opts = 'checkstyle:check -Dcheckstyle.config.location=google_checks.xml'
+
   parallel(
+
       'static analysis': {
         node('maven'){
           dir('/iam'){
             unstash 'code'
-            withSonarQubeEnv{ sh "mvn ${SONAR_MAVEN_GOAL} -Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.login=${SONAR_AUTH_TOKEN}" }
+            withSonarQubeEnv{ sh "mvn ${cobertura_opts} ${checkstyle_opts} ${SONAR_MAVEN_GOAL} -Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.login=${SONAR_AUTH_TOKEN}" }
           }
         }
       },
+
       'coverage' : {
         node('maven'){
           dir('/iam'){
             unstash 'code'
-            sh "mvn cobertura:cobertura -Dmaven.test.failure.ignore '-Dtest=!%regex[.*NotificationConcurrentTests.*]' -DfailIfNoTests=false"
+            sh "mvn ${cobertura_opts}"
 
             publishHTML(target: [
               reportName           : 'Coverage Report',
@@ -62,12 +68,13 @@ stage('test'){
           }
         }
       },
+
       'checkstyle' : {
         node('maven'){
           dir('/iam'){
             unstash 'code'
             dir('iam-persistence') { sh "mvn clean install" }
-            sh "mvn checkstyle:check -Dcheckstyle.config.location=google_checks.xml"
+            sh "mvn ${checkstyle_opts}"
 
             step([$class: 'hudson.plugins.checkstyle.CheckStylePublisher',
               pattern: '**/checkstyle-result.xml',
