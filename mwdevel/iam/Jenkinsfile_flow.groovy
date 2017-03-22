@@ -1,3 +1,6 @@
+#!groovy
+// name: iam-workflow
+
 properties([
   buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '5')),
   parameters([
@@ -45,12 +48,19 @@ stage('build'){
 }
 
 stage('test'){
+
+  def cobertura_opts = 'cobertura:cobertura -Dmaven.test.failure.ignore \'-Dtest=!%regex[.*NotificationConcurrentTests.*]\' -DfailIfNoTests=false'
+  def checkstyle_opts = 'checkstyle:check -Dcheckstyle.config.location=google_checks.xml'
+
   parallel(
       'static analysis': {
         node('maven'){
           dir('/iam'){
             unstash 'iam-code'
-            withSonarQubeEnv{ sh "mvn ${SONAR_MAVEN_GOAL} -Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.login=${SONAR_AUTH_TOKEN}" }
+            withSonarQubeEnv{ sh "mvn ${cobertura_opts} ${checkstyle_opts} ${SONAR_MAVEN_GOAL} -Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.login=${SONAR_AUTH_TOKEN}" }
+            dir('target/sonar'){
+              stash name: 'sonar-report', include: 'report-task.txt'
+            }
           }
         }
       },
@@ -58,7 +68,7 @@ stage('test'){
         node('maven'){
           dir('/iam'){
             unstash 'iam-code'
-            sh "mvn cobertura:cobertura -Dmaven.test.failure.ignore '-Dtest=!%regex[.*NotificationConcurrentTests.*]' -DfailIfNoTests=false"
+            sh "mvn ${cobertura_opts}"
 
             publishHTML(target: [
               reportName           : 'Coverage Report',
@@ -76,7 +86,7 @@ stage('test'){
           dir('/iam'){
             unstash 'iam-code'
             dir('iam-persistence') { sh "mvn clean install" }
-            sh "mvn checkstyle:check -Dcheckstyle.config.location=google_checks.xml"
+            sh "mvn ${checkstyle_opts}"
 
             step([$class: 'hudson.plugins.checkstyle.CheckStylePublisher',
               pattern: '**/checkstyle-result.xml',
@@ -88,10 +98,44 @@ stage('test'){
       )
 }
 
+def qualityGateStatus
 
-stage("Promote to QA?") {
-  timeout(time: 60, unit: 'MINUTES'){
-    approver = input(message: 'Promote to QA?', submitterParameter: 'approver')
+stage('quality gate'){
+  node('generic'){
+    unstash 'sonar-report'
+
+    def sonarServerUrl = readProperty('report-task.txt', 'serverUrl')
+    def ceTaskUrl = readProperty('report-task.txt', 'ceTaskUrl')
+    def sonarBasicAuth
+
+    withSonarQubeEnv{ sonarBasicAuth  = "${SONAR_AUTH_TOKEN}:" }
+
+    timeout(time: 3, unit: 'MINUTES') {
+      waitUntil {
+        def result = jsonParse(ceTaskUrl, sonarBasicAuth, '.task.status')
+        echo "Current CeTask status: ${result}"
+        return "SUCCESS" == "${result}"
+      }
+    }
+
+    def analysisId = jsonParse(ceTaskUrl, sonarBasicAuth, '.task.analysisId')
+    echo "Analysis ID: ${analysisId}"
+
+    def url = "${sonarServerUrl}/api/qualitygates/project_status?analysisId=${analysisId}"
+    def qualityGate =  jsonParse(url, sonarBasicAuth, '')
+    echo "${qualityGate}"
+
+    qualityGateStatus =  jsonParse(url, sonarBasicAuth, '.projectStatus.status')
+  }
+}
+
+stage("Promote to QA") {
+  if("ERROR" == qualityGateStatus) {
+    timeout(time: 60, unit: 'MINUTES'){
+      approver = input(message: 'Promote to QA?', submitterParameter: 'approver')
+    }
+  }else {
+    echo "Autopromote to QA"
   }
 }
 
@@ -263,3 +307,12 @@ stage("Production") {
   ]
 }
 
+def readProperty(filename, prop) {
+  def value = sh script: "cat ${filename} | grep ${prop} | cut -d'=' -f2-", returnStdout: true
+  return value.trim()
+}
+
+def jsonParse(url, basicAuth, field) {
+  def value =  sh script: "curl -s -u '${basicAuth}' '${url}' | jq -r '${field}'", returnStdout: true
+  return value.trim()
+}
