@@ -57,12 +57,14 @@ stage('analyze'){
         parameters: [
           string(name: 'REPO',           value: 'git@baltig.infn.it:mw-devel/sensu-mw-devel.git'),
           string(name: 'BRANCH',         value: 'master'),
-          string(name: 'PROJECTKEY',     value: 'sensu-mw-devell'),
+          string(name: 'PROJECTKEY',     value: 'sensu-mw-devel'),
           string(name: 'PROJECTNAME',    value: 'Sensu installation Puppet Modules'),
           string(name: 'PROJECTVERSION', value: '1.0'),
           string(name: 'SOURCES',        value: '.')
         ]
       },
+      failFast: false
       )
+  currentBuild.result = 'SUCCESS'
 }
 
