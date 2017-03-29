@@ -4,7 +4,7 @@ properties([
   buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '5')),
   pipelineTriggers([cron('@daily')]),
   parameters([
-    string(name: 'BRANCH', defaultValue: '1_7', description: '' )
+    string(name: 'BRANCH', defaultValue: '1_7_1', description: '' )
   ]),
 ])
 
