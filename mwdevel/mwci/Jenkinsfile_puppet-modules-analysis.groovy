@@ -33,7 +33,7 @@ stage('analyze'){
       "ci-puppet-modules" : {
         build job: 'sonar-scanner-analysis',
         parameters: [
-          string(name: 'REPO',           value: 'https://github.com/marcocaberletti/ci-puppet-modules'),
+          string(name: 'REPO',           value: 'https://github.com/cnaf/ci-puppet-modules'),
           string(name: 'BRANCH',         value: 'master'),
           string(name: 'PROJECTKEY',     value: 'ci-puppet-modules'),
           string(name: 'PROJECTNAME',    value: 'Puppet Modules for CNAF CI'),
