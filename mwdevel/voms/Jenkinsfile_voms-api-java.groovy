@@ -1,21 +1,22 @@
 #!groovy
 
 properties([
-  buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '5')),
+  buildDiscarder(logRotator(numToKeepStr: '5')),
   pipelineTriggers([cron('@daily')]),
 ])
 
-stage('prepare'){
-  node('generic'){
+node('maven'){
+  stage('prepare'){
     git branch: 'master', url: 'https://github.com/italiangrid/voms-api-java.git'
-    sh 'sed -i \'s#radiohead\\.cnaf\\.infn\\.it:8081\\/nexus\\/content\\/repositories#nexus\\.default\\.svc\\.cluster\\.local\\/repository#g\' pom.xml'
-    stash include: './*', name: 'code'
+    sh 'sed -i \'s#http:\\/\\/radiohead\\.cnaf\\.infn\\.it:8081\\/nexus\\/content\\/repositories#https:\\/\\/repo\\.cloud\\.cnaf\\.infn\\.it\\/repository#g\' pom.xml'
   }
-}
 
-stage('deploy'){
-  node('maven') {
-    unstash 'code'
-    sh "mvn clean -U -B deploy"
+  stage('analysis'){
+    def cobertura_opts = 'cobertura:cobertura -Dmaven.test.failure.ignore -DfailIfNoTests=false -Dcobertura.report.format=xml'
+    def checkstyle_opts = 'checkstyle:check -Dcheckstyle.config.location=google_checks.xml'
+
+    withSonarQubeEnv{ sh "mvn clean -U ${cobertura_opts} ${checkstyle_opts} ${SONAR_MAVEN_GOAL} -Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.login=${SONAR_AUTH_TOKEN}" }
   }
+
+  stage('deploy'){ sh "mvn clean -U -B deploy" }
 }
