@@ -11,6 +11,8 @@ properties([
 
 stage('analysis'){
   node('maven'){
+    git url: "${params.REPO}", branch: "${params.BRANCH}"
+
     def cobertura_opts = 'cobertura:cobertura -Dmaven.test.failure.ignore -DfailIfNoTests=false -Dcobertura.report.format=xml'
     def checkstyle_opts = 'checkstyle:check -Dcheckstyle.config.location=google_checks.xml'
 
