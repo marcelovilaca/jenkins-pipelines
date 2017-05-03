@@ -1,8 +1,7 @@
 #!groovy
-// name iam-test-client-kube-deploy
 
 properties([
-  buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '5')),
+  buildDiscarder(logRotator(numToKeepStr: '5')),
   parameters([
     choice(name: 'ENVIRONMENT',           choices:      'STAGING\nPRODUCTION', description: ''),
     string(name: 'IAM_TEST_CLIENT_IMAGE', defaultValue: 'cloud-vm128.cloud.cnaf.infn.it/indigoiam/iam-test-client', description: ''),

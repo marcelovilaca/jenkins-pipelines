@@ -1,8 +1,7 @@
 #!groovy
-// name: iam-workflow
 
 properties([
-  buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '5')),
+  buildDiscarder(logRotator(numToKeepStr: '5')),
   parameters([
     string(name: 'REPO',             defaultValue: 'https://github.com/marcocaberletti/iam.git',                 description: 'IAM code repository'),
     string(name: 'BRANCH',           defaultValue: 'develop',                                                    description: 'IAM code branch'),
@@ -13,124 +12,25 @@ properties([
 ])
 
 
-def registry = ''
-def approver = ''
-def image_name = "indigoiam/iam-login-service"
+def registry
+def approver
+def login_service_image_name = "indigoiam/iam-login-service"
 def test_client_image_name = "indigoiam/iam-test-client"
-def image_tag = ''
+def login_service_version
 def test_client_image_tag = 'latest'
+def iam_build_job
 
-stage('build'){
-  node('generic') {
-    git branch: "${params.BRANCH}", url: "${params.REPO}"
-    stash name: 'iam-code', useDefaultExcludes: false
-  }
-
-  node('maven') {
-    dir('/iam'){
-      unstash 'iam-code'
-      sh "mvn clean package -U -Dmaven.test.failure.ignore '-Dtest=!%regex[.*NotificationConcurrentTests.*]' -DfailIfNoTests=false"
-
-      junit '**/target/surefire-reports/TEST-*.xml'
-
-      dir('iam-login-service/target') {
-        stash name: 'iam-war', include: 'iam-login-service.war'
-      }
-
-      dir('iam-test-client/target') {
-        stash name: 'iam-test-client-jar', include: 'iam-test-client.jar'
-      }
-
-      image_tag = sh (script: 'echo v`sh utils/print-pom-version.sh`', returnStdout: true).trim()
-      registry = env.DOCKER_REGISTRY_HOST
-    }
-  }
+stage('build & analyze'){
+  iam_build_job = build job: 'iam-build',
+  parameters: [
+    string(name: 'REPO',   value: "${params.REPO}"),
+    string(name: 'BRANCH', value: "${params.BRANCH}"),
+  ]
 }
 
-stage('test'){
-
-  def cobertura_opts = 'cobertura:cobertura -Dmaven.test.failure.ignore \'-Dtest=!%regex[.*NotificationConcurrentTests.*]\' -DfailIfNoTests=false'
-  def checkstyle_opts = 'checkstyle:check -Dcheckstyle.config.location=google_checks.xml'
-
-  parallel(
-      'static analysis': {
-        node('maven'){
-          dir('/iam'){
-            unstash 'iam-code'
-            withSonarQubeEnv{ sh "mvn ${cobertura_opts} ${checkstyle_opts} ${SONAR_MAVEN_GOAL} -Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.login=${SONAR_AUTH_TOKEN}" }
-            dir('target/sonar'){
-              stash name: 'sonar-report', include: 'report-task.txt'
-            }
-          }
-        }
-      },
-      'coverage' : {
-        node('maven'){
-          dir('/iam'){
-            unstash 'iam-code'
-            sh "mvn ${cobertura_opts}"
-
-            publishHTML(target: [
-              reportName           : 'Coverage Report',
-              reportDir            : 'iam-login-service/target/site/cobertura/',
-              reportFiles          : 'index.html',
-              keepAll              : true,
-              alwaysLinkToLastBuild: true,
-              allowMissing         : false
-            ])
-          }
-        }
-      },
-      'checkstyle' : {
-        node('maven'){
-          dir('/iam'){
-            unstash 'iam-code'
-            dir('iam-persistence') { sh "mvn clean install" }
-            sh "mvn ${checkstyle_opts}"
-
-            step([$class: 'hudson.plugins.checkstyle.CheckStylePublisher',
-              pattern: '**/checkstyle-result.xml',
-              healty: '20',
-              unHealty: '100'])
-          }
-        }
-      }
-      )
-}
-
-def qualityGateStatus
-
-stage('quality gate'){
-  node('generic'){
-    unstash 'sonar-report'
-
-    def sonarServerUrl = readProperty('report-task.txt', 'serverUrl')
-    def ceTaskUrl = readProperty('report-task.txt', 'ceTaskUrl')
-    def sonarBasicAuth
-
-    withSonarQubeEnv{ sonarBasicAuth  = "${SONAR_AUTH_TOKEN}:" }
-
-    timeout(time: 3, unit: 'MINUTES') {
-      waitUntil {
-        def result = jsonParse(ceTaskUrl, sonarBasicAuth, '.task.status')
-        echo "Current CeTask status: ${result}"
-        return "SUCCESS" == "${result}"
-      }
-    }
-
-    def analysisId = jsonParse(ceTaskUrl, sonarBasicAuth, '.task.analysisId')
-    echo "Analysis ID: ${analysisId}"
-
-    def url = "${sonarServerUrl}/api/qualitygates/project_status?analysisId=${analysisId}"
-    def qualityGate =  jsonParse(url, sonarBasicAuth, '')
-    echo "${qualityGate}"
-
-    qualityGateStatus =  jsonParse(url, sonarBasicAuth, '.projectStatus.status')
-  }
-}
 
 stage("Promote to QA") {
-  if("ERROR" == qualityGateStatus) {
+  if(!'SUCCESS'.equals(iam_build_job.result)) {
     timeout(time: 60, unit: 'MINUTES'){
       approver = input(message: 'Promote to QA?', submitterParameter: 'approver')
     }
@@ -142,40 +42,29 @@ stage("Promote to QA") {
 
 stage("Docker images") {
 
-  parallel(
-      "iam-login-service": {
-        node('docker'){
-          unstash 'iam-code'
+  node('generic'){
+    step ([$class: 'CopyArtifact',
+      projectName: 'iam-build',
+      filter: 'version.txt',
+      selector: [$class: 'SpecificBuildSelector', buildNumber: "${iam_build_job.number}"]
+    ])
+    login_service_version = readFile 'version.txt'
+    login_service_version = login_service_version.trim()
+    registry = "${env.DOCKER_REGISTRY_HOST}"
+  }
 
-          dir('iam-login-service/target') { unstash 'iam-war' }
-
-          withEnv([
-            "IAM_LOGIN_SERVICE_VERSION=${image_tag}"
-          ]){
-            dir('iam-login-service/docker'){
-              sh "sh build-prod-image.sh"
-              sh "sh push-prod-image.sh"
-            }
-          }
-        }
-      },
-
-      "iam-test-client":{
-        node('docker'){
-          unstash 'iam-code'
-
-          dir('iam-test-client/target') { unstash 'iam-test-client-jar' }
-
-          dir('iam-test-client/docker'){
-            sh "sh build-prod-image.sh"
-            sh "sh push-prod-image.sh"
-          }
-        }
-      }
-      )
+  build job: 'docker_build-iam-image',
+  parameters: [
+    string(name:'IAM_REPO', value: "${params.REPO}"),
+    string(name:'IAM_BRANCH', value: "${params.BRANCH}"),
+    string(name:'LOGIN_SERVICE_IMAGE_NAME', value: "${login_service_image_name}"),
+    string(name:'LOGIN_SERVICE_VERSION', value: "${login_service_version}"),
+    string(name:'TEST_CLIENT_IMAGE_NAME', value: "${test_client_image_name}"),
+    string(name:'ARTIFACT_FROM_BUILD', value:"${iam_build_job.result}")
+  ]
 }
 
-def iam_image = "${image_name}:${image_tag}-latest"
+def iam_image = "${image_name}:${login_service_version}-latest"
 def test_client_image = "${test_client_image_name}:${test_client_image_tag}"
 
 stage("Selenium testsuite"){
@@ -186,7 +75,6 @@ stage("Selenium testsuite"){
       "develop-chrome": {
         test_chrome = build job: 'iam-deployment-test', propagate: false,
         parameters: [
-          string(name: 'BRANCH',           value: "${params.BRANCH}"),
           string(name: 'BROWSER',          value: 'chrome'),
           string(name: 'IAM_IMAGE',        value: "${iam_image}"),
           string(name: 'TESTSUITE_REPO',   value: "${params.TESTSUITE_REPO}"),
@@ -196,7 +84,6 @@ stage("Selenium testsuite"){
       "develop-firefox": {
         test_ff = build job: 'iam-deployment-test', propagate: false,
         parameters: [
-          string(name: 'BRANCH',           value: "${params.BRANCH}"),
           string(name: 'BROWSER',          value: 'firefox'),
           string(name: 'IAM_IMAGE',        value: "${iam_image}"),
           string(name: 'TESTSUITE_REPO',   value: "${params.TESTSUITE_REPO}"),
@@ -207,7 +94,6 @@ stage("Selenium testsuite"){
 
   if("FAILURE".equals(test_chrome.result) && "FAILURE".equals(test_ff.result)) {
     currentBuild.result = 'FAILURE'
-    sh "exit 1"
   }
 }
 

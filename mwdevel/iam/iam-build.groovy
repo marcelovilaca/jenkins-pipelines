@@ -1,8 +1,7 @@
 #!groovy
-// name: iam-build
 
 properties([
-  buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '5')),
+  buildDiscarder(logRotator(numToKeepStr: '5')),
   pipelineTriggers([cron('@daily')]),
   parameters([
     string(name: 'REPO',   defaultValue: 'https://github.com/marcocaberletti/iam.git', description: '' ),
@@ -22,12 +21,13 @@ stage('build'){
   node('maven') {
     dir('/iam'){
       unstash 'code'
-      sh "echo v`sh utils/print-pom-version.sh`-latest > version.txt"
+      sh "echo v`sh utils/print-pom-version.sh` > version.txt"
       sh "git rev-parse --short HEAD > version-commit.txt"
       sh "mvn clean package -U -Dmaven.test.failure.ignore '-Dtest=!%regex[.*NotificationConcurrentTests.*]' -DfailIfNoTests=false"
 
       junit '**/target/surefire-reports/TEST-*.xml'
       archive 'iam-login-service/target/iam-login-service.war'
+      archive 'iam-test-client/target/iam-test-client.jar'
       archive 'docker/saml-idp/idp/shibboleth-idp/metadata/idp-metadata.xml'
       archive 'version.txt'
       archive 'version-commit.txt'
@@ -35,22 +35,13 @@ stage('build'){
   }
 }
 
-stage('test'){
+stage('code analysis'){
 
   def cobertura_opts = 'cobertura:cobertura -Dmaven.test.failure.ignore \'-Dtest=!%regex[.*NotificationConcurrentTests.*]\' -DfailIfNoTests=false'
   def checkstyle_opts = 'checkstyle:check -Dcheckstyle.config.location=google_checks.xml'
+  def sonar_job
 
   parallel(
-
-      'static analysis': {
-        node('maven'){
-          dir('/iam'){
-            unstash 'code'
-            withSonarQubeEnv{ sh "mvn ${cobertura_opts} ${checkstyle_opts} ${SONAR_MAVEN_GOAL} -Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.login=${SONAR_AUTH_TOKEN}" }
-          }
-        }
-      },
-
       'coverage' : {
         node('maven'){
           dir('/iam'){
@@ -68,7 +59,6 @@ stage('test'){
           }
         }
       },
-
       'checkstyle' : {
         node('maven'){
           dir('/iam'){
@@ -82,6 +72,15 @@ stage('test'){
               unHealty: '100'])
           }
         }
-      }
+      },
+      'static analysis': {
+        sonar_job = build job: 'sonar-maven-analysis', propagate: false,
+        parameters: [
+          string(name: 'REPO',   value: "${params.REPO}"),
+          string(name: 'BRANCH', value: "${params.BRANCH}"),
+        ]
+      },
       )
+
+  currentBuild.result = sonar_job.result
 }

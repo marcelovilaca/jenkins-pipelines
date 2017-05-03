@@ -9,17 +9,15 @@ properties([
   ]),
 ])
 
-def component_list = 'pap pdp-pep-common pep-common pdp pep-server pep-api-c pep-api-java pepcli gsi-pep-callout'
+def component_list = 'pap pdp-pep-common pep-common pdp pep-server pep-api-c pep-api-java pepcli gsi-pep-callout metapackage'
 def build_number = ''
 def pkg_el6
 def pkg_el7
 
 stage('create RPMs'){
 
-  node('generic'){
-    if("${params.INCLUDE_PKG_BUILD_NUMBER} == true") {
-      build_number = sh (script: "date +'%Y%m%d%H%M%S'", returnStdout: true).trim()
-    }
+  if("${params.INCLUDE_PKG_BUILD_NUMBER} == true") {
+    build_number = new Date().format("yyyyMMddHHmmss")
   }
 
   parallel(
@@ -46,8 +44,7 @@ stage('create RPMs'){
 
 node('generic'){
   stage('archive'){
-    def remote_cmd = "ssh admin@packages.default.svc.cluster.local"
-    def argus_root = "/srv/packages/repo/argus"
+    def argus_root = "/mnt/packages/repo/argus"
 
     step ([$class: 'CopyArtifact',
       projectName: 'argus-authz/pkg.argus/release%2F1.7.1',
@@ -72,11 +69,15 @@ node('generic'){
       sh "createrepo el7/RPMS/"
       sh "repoview el7/RPMS/"
 
-      sh "${remote_cmd} 'mkdir -p ${argus_root}/builds/build_${BUILD_NUMBER}'"
-      sh "scp -r el6/ el7/ admin@packages.default.svc.cluster.local:${argus_root}/builds/build_${BUILD_NUMBER}/"
+      sh "mkdir -p ${argus_root}/builds/build_${BUILD_NUMBER}"
+      sh "cp -r el6/ el7/ ${argus_root}/builds/build_${BUILD_NUMBER}/"
     }
 
-    sh "${remote_cmd} 'cd ${argus_root}; rm -vf ${argus_root}/beta; ln -s ./builds/build_${BUILD_NUMBER}/ beta'"
+    sh """
+      cd ${argus_root} 
+      rm -vf ${argus_root}/nightly
+      ln -s ./builds/build_${BUILD_NUMBER}/ nightly
+    """
   }
 
   //  stage('publish'){

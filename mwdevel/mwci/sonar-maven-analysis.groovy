@@ -1,32 +1,24 @@
 #!groovy
-// name: sonar-scanner-analysis
 
 properties([
-  buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '10')),
+  buildDiscarder(logRotator(numToKeepStr: '10')),
   parameters([
-    string(name: 'REPO',           defaultValue: 'https://github.com/marcocaberletti/puppet'),
-    string(name: 'BRANCH',         defaultValue: 'master'),
-    string(name: 'PROJECTKEY',     defaultValue: 'puppet'),
-    string(name: 'PROJECTNAME',    defaultValue: 'Puppet Modules'),
-    string(name: 'PROJECTVERSION', defaultValue: '1.0'),
-    string(name: 'SOURCES',        defaultValue: 'modules')
+    string(name: 'REPO',   defaultValue: ''),
+    string(name: 'BRANCH', defaultValue: ''),
   ])
 ])
 
-
-stage('analyze'){
-  node('generic'){
+stage('analysis'){
+  node('maven'){
     git url: "${params.REPO}", branch: "${params.BRANCH}"
 
-    withSonarQubeEnv{
-      def sonar_opts="-Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.login=${SONAR_AUTH_TOKEN}"
-      def project_opts="-Dsonar.projectKey=${params.PROJECTKEY} -Dsonar.projectName='${params.PROJECTNAME}' -Dsonar.projectVersion=${params.PROJECTVERSION} -Dsonar.sources=${params.SOURCES}"
+    def cobertura_opts = 'cobertura:cobertura -Dmaven.test.failure.ignore -DfailIfNoTests=false -Dcobertura.report.format=xml'
+    def checkstyle_opts = 'checkstyle:check -Dcheckstyle.config.location=google_checks.xml'
 
-      sh "/opt/sonar-scanner/bin/sonar-scanner ${sonar_opts} ${project_opts}"
+    withSonarQubeEnv{ sh "mvn clean -U ${cobertura_opts} ${checkstyle_opts} ${SONAR_MAVEN_GOAL} -Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.login=${SONAR_AUTH_TOKEN}" }
 
-      dir('.scannerwork') {
-        stash name: 'sonar-report', include: 'report-task.txt'
-      }
+    dir('target/sonar') {
+      stash name: 'sonar-report', include: 'report-task.txt'
     }
   }
 }

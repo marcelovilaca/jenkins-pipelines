@@ -1,8 +1,7 @@
 #!groovy
-// name: puppet-modules-analysis
 
 properties([
-  buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '5')),
+  buildDiscarder(logRotator(numToKeepStr: '5')),
   pipelineTriggers([cron('@daily')]),
 ])
 

@@ -1,11 +1,11 @@
 #!groovy
-// name iam-login-service-kube-deploy
 
 properties([
-  buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '5')),
+  buildDiscarder(logRotator(numToKeepStr: '5')),
   parameters([
     choice(name: 'ENVIRONMENT', choices:      'STAGING\nPRODUCTION', description: ''),
     string(name: 'IAM_IMAGE',   defaultValue: 'cloud-vm128.cloud.cnaf.infn.it/indigoiam/iam-login-service:v0.5.0-latest', description: ''),
+    choice(name: 'SERVICE',     choices:      'iam-test.indigo-datacloud.eu.git\nocp-iam.cloud.cnaf.infn.it', description: 'Service to deploy'),
     choice(name: 'CONTEXT',     choices:      'dev\nprod', description: 'Context infrastructure'),
   ]),
 ])
@@ -18,7 +18,7 @@ def nfs_server = '10.0.0.30'
 def mail_server = 'postfix.default.svc'
 
 if ("PRODUCTION" == "${params.ENVIRONMENT}") {
-  repo = "git@baltig.infn.it:mw-devel/iam-test.indigo-datacloud.eu.git"
+  repo = "git@baltig.infn.it:mw-devel/${params.SERVICE}"
   directory = 'iam-login-service'
   namespace = 'indigo'
   mail_server = 'doctorwho.cnaf.infn.it'

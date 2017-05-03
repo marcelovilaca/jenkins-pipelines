@@ -1,8 +1,7 @@
 #!groovy
-// name: docker_build-iam-ts-images
 
 properties([
-  buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '5')),
+  buildDiscarder(logRotator(numToKeepStr: '5')),
   parameters([
     string(name: 'BRANCH',    defaultValue: 'develop', description: '' ),
   ]),
