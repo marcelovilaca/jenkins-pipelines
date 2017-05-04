@@ -26,9 +26,9 @@ stage('build'){
       sh "mvn clean package -U -Dmaven.test.failure.ignore '-Dtest=!%regex[.*NotificationConcurrentTests.*]' -DfailIfNoTests=false"
 
       junit '**/target/surefire-reports/TEST-*.xml'
-      archive 'iam-login-service/target/iam-login-service.war'
-      archive 'iam-test-client/target/iam-test-client.jar'
-      archive 'docker/saml-idp/idp/shibboleth-idp/metadata/idp-metadata.xml'
+      dir('iam-login-service/target') { archive 'iam-login-service.war' }
+      dir('iam-test-client/target') { archive 'iam-test-client.jar' }
+      dir('docker/saml-idp/idp/shibboleth-idp/metadata'){ archive 'idp-metadata.xml' }
       archive 'version.txt'
       archive 'version-commit.txt'
     }

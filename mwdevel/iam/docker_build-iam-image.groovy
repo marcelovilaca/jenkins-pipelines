@@ -7,7 +7,7 @@ properties([
     string(name: 'IAM_BRANCH',               defaultValue: 'develop', description: '' ),
     string(name: 'LOGIN_SERVICE_IMAGE_NAME', defaultValue: 'indigoiam/iam-login-service', description: ''),
     string(name: 'TEST_CLIENT_IMAGE_NAME',   defaultValue: 'indigoiam/iam-test-client', description: ''),
-    string(name: 'ARTIFACT_FROM_BUILD',      defaultValue: '', description: 'Build number from which get the artifact. Empty for last successfull build.'),
+    string(name: 'ARTIFACT_FROM_BUILD',      defaultValue: '', description: 'Build number from which get the artifact. Empty for last stable build.'),
     string(name: 'LOGIN_SERVICE_VERSION',    defaultValue: 'develop', description: '')
   ]),
   pipelineTriggers([cron('@daily')]),
@@ -45,7 +45,7 @@ stage('prepare'){
     dir('iam-login-service/target') {
       step ([$class: 'CopyArtifact',
         projectName: 'iam-build',
-        filter: 'iam-login-service/target/iam-login-service.war',
+        filter: 'iam-login-service.war',
         selector: [$class: 'SpecificBuildSelector', buildNumber: "${from_build_number}"]
       ])
     }
@@ -53,7 +53,7 @@ stage('prepare'){
     dir('iam-test-client/target') {
       step ([$class: 'CopyArtifact',
         projectName: 'iam-build',
-        filter: 'iam-test-client/target/iam-test-client.jar',
+        filter: 'iam-test-client.jar',
         selector: [$class: 'SpecificBuildSelector', buildNumber: "${from_build_number}"]
       ])
     }

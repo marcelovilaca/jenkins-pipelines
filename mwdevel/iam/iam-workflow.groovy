@@ -192,13 +192,3 @@ stage("Production") {
     string(name: 'CONTEXT',               value: "${params.CONTEXT}"),
   ]
 }
-
-def readProperty(filename, prop) {
-  def value = sh script: "cat ${filename} | grep ${prop} | cut -d'=' -f2-", returnStdout: true
-  return value.trim()
-}
-
-def jsonParse(url, basicAuth, field) {
-  def value =  sh script: "curl -s -u '${basicAuth}' '${url}' | jq -r '${field}'", returnStdout: true
-  return value.trim()
-}

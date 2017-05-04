@@ -17,7 +17,7 @@ def pkg_el7
 
 stage('create RPMs'){
 
-  if("${params.INCLUDE_PKG_BUILD_NUMBER} == true") {
+  if("${params.INCLUDE_PKG_BUILD_NUMBER}" == true) {
     build_number = new Date().format("yyyyMMddHHmmss")
   }
 
@@ -62,5 +62,7 @@ node('generic'){
      rm -vf ${iam_root}/nightly 
      ln -s ./builds/build_${BUILD_NUMBER}/ nightly
     """
+
+    sh "find ${iam_root}/builds/ -maxdepth 1 -type d -ctime +10 -print -exec rm -rf {} \\;"
   }
 }
