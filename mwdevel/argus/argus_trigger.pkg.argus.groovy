@@ -5,32 +5,31 @@ properties([
   pipelineTriggers([cron('@daily')]),
   parameters([
     string(name: 'PKG_TAG', defaultValue: 'release/1.7.1', description: 'The branch of the pkg.argus repo' ),
+    string(name: 'COMPONENTS', defaultValue: 'pap pdp-pep-common pep-common pdp pep-server pep-api-c pep-api-java pepcli gsi-pep-callout metapackage', description: 'Components to build' ),
     booleanParam(name:'INCLUDE_PKG_BUILD_NUMBER', defaultValue: true, description: 'When true, creates packages which include a build number in their version.')
   ]),
 ])
 
-def component_list = 'pap pdp-pep-common pep-common pdp pep-server pep-api-c pep-api-java pepcli gsi-pep-callout metapackage'
 def build_number = ''
 def pkg_el6
 def pkg_el7
 
 stage('create RPMs'){
-
-  if("${params.INCLUDE_PKG_BUILD_NUMBER} == true") {
+  if(params.INCLUDE_PKG_BUILD_NUMBER) {
     build_number = new Date().format("yyyyMMddHHmmss")
   }
 
   parallel(
       'centos6': {
         pkg_el6 = build job: 'argus-authz/pkg.argus/release%2F1.7.1', propagate: false, parameters: [
-          string(name: 'COMPONENTS', value: "${component_list}"),
+          string(name: 'COMPONENTS', value: "${params.COMPONENTS}"),
           string(name: 'PLATFORM', value: 'centos6'),
           string(name: 'PKG_BUILD_NUMBER', value: "${build_number}")
         ]
       },
       'centos7': {
         pkg_el7 = build job: 'argus-authz/pkg.argus/release%2F1.7.1', propagate: false, parameters: [
-          string(name: 'COMPONENTS', value: "${component_list}"),
+          string(name: 'COMPONENTS', value: "${params.COMPONENTS}"),
           string(name: 'PLATFORM', value: 'centos7'),
           string(name: 'PKG_BUILD_NUMBER', value: "${build_number}")
         ]
@@ -76,11 +75,9 @@ node('generic'){
     sh """
       cd ${argus_root} 
       rm -vf ${argus_root}/nightly
-      ln -s ./builds/build_${BUILD_NUMBER}/ nightly
+      ln -vs ./builds/build_${BUILD_NUMBER}/ nightly
     """
-  }
 
-  //  stage('publish'){
-  //
-  //  }
+    sh "find ${argus_root}/builds/ -maxdepth 1 -type d -ctime +10 -print -exec rm -rf {} \\;"
+  }
 }

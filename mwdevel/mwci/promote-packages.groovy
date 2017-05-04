@@ -5,7 +5,8 @@ properties([
   parameters([
     choice(name: 'PRODUCT', choices: 'argus\nindigo-iam', description: 'Product packages'),
     string(name: 'BUILD_NUMBER', defaultValue: '', description: 'Build to promote. Empty for LastStableBuild' ),
-    choice(name: 'TARGET', choices: 'beta\nstable', description: 'Target version')
+    choice(name: 'TARGET', choices: 'beta\nstable', description: 'Target version'),
+    string(name: 'REPO_TITLE', defaultValue: '', description: 'Description of the repository in a few word. Platform is appended by default.')
   ]),
 ])
 
@@ -24,9 +25,9 @@ node('generic'){
     sh "rsync -avu ${src_dir}/ ${dest_dir}/"
 
     sh "createrepo ${dest_dir}/el6/RPMS"
-    sh "repoview ${dest_dir}/el6/RPMS"
+    sh "repoview -t '${params.REPO_TITLE} (CentOS 6)' ${dest_dir}/el6/RPMS"
 
     sh "createrepo ${dest_dir}/el7/RPMS"
-    sh "repoview ${dest_dir}/el7/RPMS"
+    sh "repoview -t '${params.REPO_TITLE} (CentOS 7)' ${dest_dir}/el7/RPMS"
   }
 }

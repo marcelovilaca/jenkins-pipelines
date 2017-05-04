@@ -1,0 +1,76 @@
+#!groovy
+
+properties([
+  buildDiscarder(logRotator(numToKeepStr: '5')),
+  parameters([
+    string(name: 'PKG_TAG', defaultValue: 'release/1.7.1', description: ''),
+    string(name: 'COMPONENTS', defaultValue: 'pap pdp-pep-common pep-common pdp pep-server pep-api-c pep-api-java pepcli gsi-pep-callout metapackage', description: 'Components to build' ),
+    string(name: 'GITHUB_REPO', defaultValue: 'github.com/marcocaberletti/repo', description: '')
+  ]),
+])
+
+
+def rpm_job, approver
+def title = 'Argus Authorization Service'
+def target = 'beta'
+
+stage('build RPMs'){
+  rpm_job = build job: 'argus_trigger.pkg.argus',
+  parameters: [
+    string(name: 'PKG_TAG', value: "${params.PKG_TAG}"),
+    string(name: 'COMPONENTS', value: "${params.COMPONENTS}"),
+    booleanParam(name: 'INCLUDE_PKG_BUILD_NUMBER', value: false),
+  ]
+}
+
+
+stage("Promote to Beta") {
+  timeout(time: 60, unit: 'MINUTES'){
+    approver = input(message: 'Promote Packages to BETA release?', submitterParameter: 'approver')
+  }
+
+  build job: 'promote-packages',
+  parameters: [
+    string(name: 'PRODUCT', value: 'argus'),
+    string(name: 'BUILD_NUMBER', value: "${rpm_job.number}"),
+    string(name: 'TARGET', value: "${target}"),
+    string(name: 'REPO_TITLE', value: "${title}")
+  ]
+}
+
+
+stage("Publish on GitHub"){
+  timeout(time: 60, unit: 'MINUTES'){
+    approver = input(message: 'Push packages to GitHub repo?', submitterParameter: 'approver')
+  }
+
+  node('generic'){
+    def github_repo_url = "https://${params.GITHUB_REPO}"
+    def github_repo_branch = "gh-pages"
+
+    dir('repo'){
+      git url: "${github_repo_url}", branch: "${github_repo_branch}"
+
+      sh "rsync -avu --delete /mnt/packages/repo/argus/${target}/ ${target}/"
+
+      dir("${target}/") {
+        sh "createrepo el6/RPMS"
+        sh "repoview -t '${title} (CentOS 6)' el6/RPMS"
+
+        sh "createrepo el7/RPMS"
+        sh "repoview -t '${title} (CentOS 7)' el7/RPMS"
+      }
+
+      withCredentials([
+        usernamePassword(credentialsId: 'marco-github-credentials', passwordVariable: 'git_password', usernameVariable: 'git_username')
+      ]) {
+        sh "git config --global user.name 'JenkinsCI'"
+        sh "git config --global user.email 'jenkinsci@cloud.cnaf.infn.it'"
+        sh "git add ."
+        sh "git commit -m 'Upload ${target} packages for ${params.PKG_TAG}'"
+        sh "git push https://${git_username}:${git_password}@${params.GITHUB_REPO}"
+      }
+    }
+  }
+}
+
