@@ -38,6 +38,8 @@ stage('create RPMs'){
 
   if("FAILURE".equals(pkg_el6.result) && "FAILURE".equals(pkg_el7.result)) {
     currentBuild.result = 'FAILURE'
+    slackSend color: 'danger', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Failure (<${env.BUILD_URL}|Open>)"
+    sh "exit 1"
   }
 }
 
@@ -45,39 +47,44 @@ node('generic'){
   stage('archive'){
     def argus_root = "/mnt/packages/repo/argus"
 
-    step ([$class: 'CopyArtifact',
-      projectName: 'argus-authz/pkg.argus/release%2F1.7.1',
-      filter: 'repo/centos6/**',
-      selector: [$class: 'SpecificBuildSelector', buildNumber: "${pkg_el6.number}"]
-    ])
+    try {
+      step ([$class: 'CopyArtifact',
+        projectName: 'argus-authz/pkg.argus/release%2F1.7.1',
+        filter: 'repo/centos6/**',
+        selector: [$class: 'SpecificBuildSelector', buildNumber: "${pkg_el6.number}"]
+      ])
 
-    step ([$class: 'CopyArtifact',
-      projectName: 'argus-authz/pkg.argus/release%2F1.7.1',
-      filter: 'repo/centos7/**',
-      selector: [$class: 'SpecificBuildSelector', buildNumber: "${pkg_el7.number}"]
-    ])
+      step ([$class: 'CopyArtifact',
+        projectName: 'argus-authz/pkg.argus/release%2F1.7.1',
+        filter: 'repo/centos7/**',
+        selector: [$class: 'SpecificBuildSelector', buildNumber: "${pkg_el7.number}"]
+      ])
 
-    dir('repo') {
-      sh 'mkdir -p {el6,el7}/RPMS'
+      dir('repo') {
+        sh 'mkdir -p {el6,el7}/RPMS'
 
-      sh 'mv centos6/* el6/RPMS/'
-      sh "createrepo el6/RPMS/"
-      sh "repoview el6/RPMS/"
+        sh 'mv centos6/* el6/RPMS/'
+        sh "createrepo el6/RPMS/"
+        sh "repoview el6/RPMS/"
 
-      sh 'mv centos7/* el7/RPMS/'
-      sh "createrepo el7/RPMS/"
-      sh "repoview el7/RPMS/"
+        sh 'mv centos7/* el7/RPMS/'
+        sh "createrepo el7/RPMS/"
+        sh "repoview el7/RPMS/"
 
-      sh "mkdir -p ${argus_root}/builds/build_${BUILD_NUMBER}"
-      sh "cp -r el6/ el7/ ${argus_root}/builds/build_${BUILD_NUMBER}/"
-    }
+        sh "mkdir -p ${argus_root}/builds/build_${BUILD_NUMBER}"
+        sh "cp -r el6/ el7/ ${argus_root}/builds/build_${BUILD_NUMBER}/"
+      }
 
-    sh """
+      sh """
       cd ${argus_root} 
       rm -vf ${argus_root}/nightly
       ln -vs ./builds/build_${BUILD_NUMBER}/ nightly
     """
 
-    sh "find ${argus_root}/builds/ -maxdepth 1 -type d -ctime +10 -print -exec rm -rf {} \\;"
+      sh "find ${argus_root}/builds/ -maxdepth 1 -type d -ctime +10 -print -exec rm -rf {} \\;"
+    }catch(e) {
+      slackSend color: 'danger', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Failure (<${env.BUILD_URL}|Open>)"
+      throw e
+    }
   }
 }

@@ -13,53 +13,56 @@ properties([
 ])
 
 
-stage('analyze'){
-  node('generic'){
-    git url: "${params.REPO}", branch: "${params.BRANCH}"
+node('generic'){
+  try {
+    stage('analyze'){
+      git url: "${params.REPO}", branch: "${params.BRANCH}"
 
-    withSonarQubeEnv{
-      def sonar_opts="-Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.login=${SONAR_AUTH_TOKEN}"
-      def project_opts="-Dsonar.projectKey=${params.PROJECTKEY} -Dsonar.projectName='${params.PROJECTNAME}' -Dsonar.projectVersion=${params.PROJECTVERSION} -Dsonar.sources=${params.SOURCES}"
+      withSonarQubeEnv{
+        def sonar_opts="-Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.login=${SONAR_AUTH_TOKEN}"
+        def project_opts="-Dsonar.projectKey=${params.PROJECTKEY} -Dsonar.projectName='${params.PROJECTNAME}' -Dsonar.projectVersion=${params.PROJECTVERSION} -Dsonar.sources=${params.SOURCES}"
 
-      sh "/opt/sonar-scanner/bin/sonar-scanner ${sonar_opts} ${project_opts}"
+        sh "/opt/sonar-scanner/bin/sonar-scanner ${sonar_opts} ${project_opts}"
 
-      dir('.scannerwork') {
-        stash name: 'sonar-report', include: 'report-task.txt'
-      }
-    }
-  }
-}
-
-stage('quality gate'){
-  node('generic'){
-    unstash 'sonar-report'
-
-    def sonarServerUrl = readProperty('report-task.txt', 'serverUrl')
-    def ceTaskUrl = readProperty('report-task.txt', 'ceTaskUrl')
-    def sonarBasicAuth
-
-    withSonarQubeEnv{ sonarBasicAuth  = "${SONAR_AUTH_TOKEN}:" }
-
-    timeout(time: 3, unit: 'MINUTES') {
-      waitUntil {
-        def result = jsonParse(ceTaskUrl, sonarBasicAuth, '.task.status')
-        echo "Current CeTask status: ${result}"
-        return "SUCCESS" == "${result}"
+        dir('.scannerwork') {
+          stash name: 'sonar-report', include: 'report-task.txt'
+        }
       }
     }
 
-    def analysisId = jsonParse(ceTaskUrl, sonarBasicAuth, '.task.analysisId')
-    echo "Analysis ID: ${analysisId}"
+    stage('quality gate'){
+      unstash 'sonar-report'
 
-    def url = "${sonarServerUrl}/api/qualitygates/project_status?analysisId=${analysisId}"
-    def qualityGate =  jsonParse(url, sonarBasicAuth, '')
-    echo "${qualityGate}"
+      def sonarServerUrl = readProperty('report-task.txt', 'serverUrl')
+      def ceTaskUrl = readProperty('report-task.txt', 'ceTaskUrl')
+      def sonarBasicAuth
 
-    def status =  jsonParse(url, sonarBasicAuth, '.projectStatus.status')
+      withSonarQubeEnv{ sonarBasicAuth  = "${SONAR_AUTH_TOKEN}:" }
 
-    if ("ERROR" == "${status}") {
-      currentBuild.result = 'UNSTABLE'
+      timeout(time: 3, unit: 'MINUTES') {
+        waitUntil {
+          def result = jsonParse(ceTaskUrl, sonarBasicAuth, '.task.status')
+          echo "Current CeTask status: ${result}"
+          return "SUCCESS" == "${result}"
+        }
+      }
+
+      def analysisId = jsonParse(ceTaskUrl, sonarBasicAuth, '.task.analysisId')
+      echo "Analysis ID: ${analysisId}"
+
+      def url = "${sonarServerUrl}/api/qualitygates/project_status?analysisId=${analysisId}"
+      def qualityGate =  jsonParse(url, sonarBasicAuth, '')
+      echo "${qualityGate}"
+
+      def status =  jsonParse(url, sonarBasicAuth, '.projectStatus.status')
+
+      if ("ERROR" == "${status}") {
+        currentBuild.result = 'UNSTABLE'
+        slackSend color: 'warning', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Unstable (<${env.BUILD_URL}|Open>)"
+      }
     }
+  }catch(e) {
+    slackSend color: 'danger', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Failure (<${env.BUILD_URL}|Open>)"
   }
 }
 
