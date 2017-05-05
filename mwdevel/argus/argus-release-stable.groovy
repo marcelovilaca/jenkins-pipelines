@@ -61,7 +61,7 @@ try {
           sh "git config --global user.name 'JenkinsCI'"
           sh "git config --global user.email 'jenkinsci@cloud.cnaf.infn.it'"
           sh "git add ."
-          sh "git commit -m 'Sync packages from beta'"
+          sh "git commit -m 'Promote packages from beta to stable'"
           sh "git push https://${git_username}:${git_password}@${params.GITHUB_REPO}"
         }
       }
