@@ -82,6 +82,13 @@ try {
         )
 
     currentBuild.result = sonar_job.result
+
+    if(currentBuild.result == 'UNSTABLE') {
+      slackSend color: 'warning', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Unstable (<${env.BUILD_URL}|Open>)"
+    }else if(currentBuild.result == 'FAILURE') {
+      slackSend color: 'danger', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Failure (<${env.BUILD_URL}|Open>)"
+      sh "exit 1"
+    }
   }
 }catch(e) {
   slackSend color: 'danger', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Failure (<${env.BUILD_URL}|Open>)"
