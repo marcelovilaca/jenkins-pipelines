@@ -73,4 +73,10 @@ stage('analyze'){
   }
 
   currentBuild.result = result
+
+  if(result == 'UNSTABLE') {
+    slackSend color: 'warning', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Unstable (<${env.BUILD_URL}|Open>)"
+  }else if(result == 'FAILURE') {
+    slackSend color: 'danger', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Failure (<${env.BUILD_URL}|Open>)"
+  }
 }

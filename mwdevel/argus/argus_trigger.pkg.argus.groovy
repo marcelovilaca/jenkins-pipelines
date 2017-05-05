@@ -61,13 +61,13 @@ node('generic'){
       ])
 
       dir('repo') {
-        sh 'mkdir -p {el6,el7}/RPMS'
+        sh "mkdir -p {el6,el7}/RPMS"
 
-        sh 'mv centos6/* el6/RPMS/'
+        sh "mv centos6/* el6/RPMS/"
         sh "createrepo el6/RPMS/"
         sh "repoview el6/RPMS/"
 
-        sh 'mv centos7/* el7/RPMS/'
+        sh "mv centos7/* el7/RPMS/"
         sh "createrepo el7/RPMS/"
         sh "repoview el7/RPMS/"
 
@@ -75,11 +75,10 @@ node('generic'){
         sh "cp -r el6/ el7/ ${argus_root}/builds/build_${BUILD_NUMBER}/"
       }
 
-      sh """
-      cd ${argus_root} 
-      rm -vf ${argus_root}/nightly
-      ln -vs ./builds/build_${BUILD_NUMBER}/ nightly
-    """
+      dir("${argus_root}"){
+        sh "rm -vf ${argus_root}/nightly"
+        sh "ln -vs ./builds/build_${BUILD_NUMBER}/ nightly"
+      }
 
       sh "find ${argus_root}/builds/ -maxdepth 1 -type d -ctime +10 -print -exec rm -rf {} \\;"
     }catch(e) {

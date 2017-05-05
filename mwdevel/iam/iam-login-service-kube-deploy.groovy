@@ -61,6 +61,9 @@ node("kubectl"){
         }catch(error){
           withEnv(["NAMESPACE=${namespace}",]){ sh "kubectl ${context_opts} rollout undo deployment/iam --namespace=${namespace}" }
           currentBuild.result = 'FAILURE'
+
+          slackSend color: 'danger', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Failure (<${env.BUILD_URL}|Open>)"
+          throw(error)
         }
       }
     }

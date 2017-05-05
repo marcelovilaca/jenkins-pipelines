@@ -63,6 +63,7 @@ node('generic'){
     }
   }catch(e) {
     slackSend color: 'danger', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Failure (<${env.BUILD_URL}|Open>)"
+    throw(e)
   }
 }
 

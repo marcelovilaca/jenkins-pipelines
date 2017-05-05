@@ -14,63 +14,69 @@ def rpm_job, approver
 def title = 'Argus Authorization Service'
 def target = 'beta'
 
-stage('build RPMs'){
-  rpm_job = build job: 'argus_trigger.pkg.argus',
-  parameters: [
-    string(name: 'PKG_TAG', value: "${params.PKG_TAG}"),
-    string(name: 'COMPONENTS', value: "${params.COMPONENTS}"),
-    booleanParam(name: 'INCLUDE_PKG_BUILD_NUMBER', value: false),
-  ]
-}
-
-
-stage("Promote to Beta") {
-  timeout(time: 60, unit: 'MINUTES'){
-    approver = input(message: 'Promote Packages to BETA release?', submitterParameter: 'approver')
+try {
+  stage('build RPMs'){
+    rpm_job = build job: 'argus_trigger.pkg.argus',
+    parameters: [
+      string(name: 'PKG_TAG', value: "${params.PKG_TAG}"),
+      string(name: 'COMPONENTS', value: "${params.COMPONENTS}"),
+      booleanParam(name: 'INCLUDE_PKG_BUILD_NUMBER', value: false),
+    ]
   }
 
-  build job: 'promote-packages',
-  parameters: [
-    string(name: 'PRODUCT', value: 'argus'),
-    string(name: 'BUILD_NUMBER', value: "${rpm_job.number}"),
-    string(name: 'TARGET', value: "${target}"),
-    string(name: 'REPO_TITLE', value: "${title}")
-  ]
-}
 
+  stage("Promote to Beta") {
+    timeout(time: 60, unit: 'MINUTES'){
+      approver = input(message: 'Promote Packages to BETA release?', submitterParameter: 'approver')
+      slackSend color: 'warning', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Requires approval to the next stage (<${env.BUILD_URL}|Open>)"
+    }
 
-stage("Publish on GitHub"){
-  timeout(time: 60, unit: 'MINUTES'){
-    approver = input(message: 'Push packages to GitHub repo?', submitterParameter: 'approver')
+    build job: 'promote-packages',
+    parameters: [
+      string(name: 'PRODUCT', value: 'argus'),
+      string(name: 'BUILD_NUMBER', value: "${rpm_job.number}"),
+      string(name: 'TARGET', value: "${target}"),
+      string(name: 'REPO_TITLE', value: "${title}")
+    ]
   }
 
-  node('generic'){
-    def github_repo_url = "https://${params.GITHUB_REPO}"
-    def github_repo_branch = "gh-pages"
 
-    dir('repo'){
-      git url: "${github_repo_url}", branch: "${github_repo_branch}"
+  stage("Publish on GitHub"){
+    timeout(time: 60, unit: 'MINUTES'){
+      approver = input(message: 'Push packages to GitHub repo?', submitterParameter: 'approver')
+      slackSend color: 'warning', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Requires approval to the next stage (<${env.BUILD_URL}|Open>)"
+    }
 
-      sh "rsync -avu --delete /mnt/packages/repo/argus/${target}/ ${target}/"
+    node('generic'){
+      def github_repo_url = "https://${params.GITHUB_REPO}"
+      def github_repo_branch = "gh-pages"
 
-      dir("${target}/") {
-        sh "createrepo el6/RPMS"
-        sh "repoview -t '${title} (CentOS 6)' el6/RPMS"
+      dir('repo'){
+        git url: "${github_repo_url}", branch: "${github_repo_branch}"
 
-        sh "createrepo el7/RPMS"
-        sh "repoview -t '${title} (CentOS 7)' el7/RPMS"
-      }
+        sh "rsync -avu --delete /mnt/packages/repo/argus/${target}/ ${target}/"
 
-      withCredentials([
-        usernamePassword(credentialsId: 'marco-github-credentials', passwordVariable: 'git_password', usernameVariable: 'git_username')
-      ]) {
-        sh "git config --global user.name 'JenkinsCI'"
-        sh "git config --global user.email 'jenkinsci@cloud.cnaf.infn.it'"
-        sh "git add ."
-        sh "git commit -m 'Upload ${target} packages for ${params.PKG_TAG}'"
-        sh "git push https://${git_username}:${git_password}@${params.GITHUB_REPO}"
+        dir("${target}/") {
+          sh "createrepo el6/RPMS"
+          sh "repoview -t '${title} (CentOS 6)' el6/RPMS"
+
+          sh "createrepo el7/RPMS"
+          sh "repoview -t '${title} (CentOS 7)' el7/RPMS"
+        }
+
+        withCredentials([
+          usernamePassword(credentialsId: 'marco-github-credentials', passwordVariable: 'git_password', usernameVariable: 'git_username')
+        ]) {
+          sh "git config --global user.name 'JenkinsCI'"
+          sh "git config --global user.email 'jenkinsci@cloud.cnaf.infn.it'"
+          sh "git add ."
+          sh "git commit -m 'Upload ${target} packages for ${params.PKG_TAG}'"
+          sh "git push https://${git_username}:${git_password}@${params.GITHUB_REPO}"
+        }
       }
     }
   }
+}catch(e) {
+  slackSend color: 'danger', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Failure (<${env.BUILD_URL}|Open>)"
+  throw(e)
 }
-
