@@ -26,9 +26,10 @@ try {
 
 
   stage("Promote to Beta") {
+    slackSend color: 'warning', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Requires approval to the next stage (<${env.BUILD_URL}|Open>)"
+
     timeout(time: 60, unit: 'MINUTES'){
       approver = input(message: 'Promote Packages to BETA release?', submitterParameter: 'approver')
-      slackSend color: 'warning', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Requires approval to the next stage (<${env.BUILD_URL}|Open>)"
     }
 
     build job: 'promote-packages',
@@ -42,9 +43,10 @@ try {
 
 
   stage("Publish on GitHub"){
+    slackSend color: 'warning', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Requires approval to the next stage (<${env.BUILD_URL}|Open>)"
+
     timeout(time: 60, unit: 'MINUTES'){
       approver = input(message: 'Push packages to GitHub repo?', submitterParameter: 'approver')
-      slackSend color: 'warning', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Requires approval to the next stage (<${env.BUILD_URL}|Open>)"
     }
 
     node('generic'){
