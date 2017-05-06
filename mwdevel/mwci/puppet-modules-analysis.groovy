@@ -69,7 +69,6 @@ pipeline {
             },
             failFast: false
             )
-        currentBuild.result = 'SUCCESS'
       }
     }
   }
