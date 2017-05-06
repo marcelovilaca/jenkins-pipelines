@@ -21,7 +21,7 @@ try {
       build_number = new Date().format("yyyyMMddHHmmss")
     }
 
-    pkg_el7 = build job: 'pkg.indigo-iam/master', propagate: false, parameters: [
+    pkg_el7 = build job: 'pkg.indigo-iam/master', parameters: [
       string(name: 'COMPONENTS', value: "${component_list}"),
       string(name: 'PLATFORM', value: 'centos7'),
       string(name: 'PKG_BUILD_NUMBER', value: "${build_number}")
