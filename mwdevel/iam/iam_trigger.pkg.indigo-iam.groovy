@@ -16,7 +16,7 @@ def pkg_el7, pkg_deb
 try {
   stage('create packages'){
 
-    if("${params.INCLUDE_PKG_BUILD_NUMBER}" == true) {
+    if("${params.INCLUDE_PKG_BUILD_NUMBER}" == "1") {
       build_number = new Date().format("yyyyMMddHHmmss")
     }
 
