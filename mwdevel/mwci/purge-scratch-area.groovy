@@ -6,14 +6,15 @@ pipeline {
     buildDiscarder(logRotator(numToKeepStr: '5'))
   }
 
-  triggers { cron('@daily') }
+  triggers { cron('@weekly') }
 
   parameters {
     string(name: 'DAYS', defaultValue: '30', description: '' )
   }
 
   stages {
-    stage('clean'){ steps { sh "find /srv/scratch/ -maxdepth 1 -type d -ctime +${params.DAYS} -print -exec rm -rf {} \\;" } }
+    stage('clean'){ steps { sh "find /srv/scratch/ -maxdepth 1 -type d -ctime +${params.DAYS} -print -exec rm -rf {} \\;"
+      } }
   }
 
   post {

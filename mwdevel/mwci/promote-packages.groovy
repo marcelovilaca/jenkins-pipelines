@@ -25,12 +25,35 @@ pipeline{
           }
 
           sh "rsync -avu ${src_dir}/ ${dest_dir}/"
+        }
+      }
+    }
+    stage('rebuild RPMs repo'){
+      steps {
+        script {
+          def dest_dir = "/mnt/packages/repo/${params.PRODUCT}/${params.TARGET}"
 
-          sh "createrepo ${dest_dir}/el6/RPMS"
-          sh "repoview -t '${params.REPO_TITLE} (CentOS 6)' ${dest_dir}/el6/RPMS"
+          if(fileExists("${dest_dir}/el6")) {
+            sh "createrepo ${dest_dir}/el6/RPMS"
+            sh "repoview -t '${params.REPO_TITLE} (CentOS 6)' ${dest_dir}/el6/RPMS"
+          }
 
-          sh "createrepo ${dest_dir}/el7/RPMS"
-          sh "repoview -t '${params.REPO_TITLE} (CentOS 7)' ${dest_dir}/el7/RPMS"
+          if(fileExists("${dest_dir}/el7")) {
+            sh "createrepo ${dest_dir}/el7/RPMS"
+            sh "repoview -t '${params.REPO_TITLE} (CentOS 7)' ${dest_dir}/el7/RPMS"
+          }
+        }
+      }
+    }
+    stage('rebuild DEBs repo'){
+      agent { label 'generic-ubuntu' }
+      steps {
+        script {
+          def dest_dir = "/mnt/packages/repo/${params.PRODUCT}/${params.TARGET}"
+
+          if(fileExists("${dest_dir}/xenial")) {
+            dir("${dest_dir}/xenial") {  sh "dpkg-scanpackages -m amd64 | gzip > amd64/Packages.gz"  }
+          }
         }
       }
     }

@@ -23,7 +23,7 @@ try {
       git branch: "${params.IAM_BRANCH}", url: "${params.IAM_REPO}"
 
       if("" == "${params.ARTIFACT_FROM_BUILD}" ) {
-        from_build_number = sh returnStdout: true, script: 'curl -sk http://jenkinsci.default.svc/job/iam-build/lastStableBuild/buildNumber'
+        from_build_number = sh returnStdout: true, script: 'curl -sk http://jenkinsci.default.svc/job/iam-build/lastSuccessfulBuild/buildNumber'
         echo "Last stable build: ${from_build_number}"
       }else{
         from_build_number = "${params.ARTIFACT_FROM_BUILD}"
