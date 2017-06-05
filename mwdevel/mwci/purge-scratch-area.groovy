@@ -14,7 +14,10 @@ pipeline {
 
   stages {
     stage('clean'){
-      steps {  sh "find /srv/scratch/ -maxdepth 1 -type d -ctime +${params.DAYS} -print -exec rm -rf {} \\;" }
+      steps {
+        sh "find /srv/scratch/ -maxdepth 1 -type d -ctime +${params.DAYS} -print -exec rm -rf {} \\;"
+        script { currentBuild.result = 'SUCCESS' }
+      }
     }
   }
 
@@ -22,8 +25,6 @@ pipeline {
     failure {
       slackSend color: 'danger', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Failure (<${env.BUILD_URL}|Open>)"
     }
-
-    success { currentBuild.result = 'SUCCESS' }
 
     changed {
       script{

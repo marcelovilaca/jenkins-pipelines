@@ -31,15 +31,18 @@ pipeline {
       }
     }
 
-    stage('deploy'){ steps {  sh "mvn -U -B deploy -P cnaf-snapshots" } }
+    stage('deploy'){
+      steps {
+        sh "mvn -U -B deploy -P cnaf-snapshots"
+        script { currentBuild.result = 'SUCCESS' }
+      }
+    }
   }
 
   post {
     failure {
       slackSend color: 'danger', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Failure (<${env.BUILD_URL}|Open>)"
     }
-
-    success { currentBuild.result = 'SUCCESS' }
 
     changed {
       script{
