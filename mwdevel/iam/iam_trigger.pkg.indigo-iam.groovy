@@ -89,10 +89,11 @@ try {
         sh "ln -vs ./builds/build_${BUILD_NUMBER}/ nightly"
       }
       sh "find ${iam_root}/builds/ -maxdepth 1 -type d -ctime +10 -print -exec rm -rf {} \\;"
-      sh "find /mnt/packages/repo -type d -name '*@tmp' -print -exec rm -rf {} \\;"
+//      sh "find /mnt/packages/repo -type d -name '*@tmp' -print -exec rm -rf {} \\;"
     }
   }
 }catch(e) {
   slackSend color: 'danger', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Failure (<${env.BUILD_URL}|Open>)"
   throw(e)
 }
+
