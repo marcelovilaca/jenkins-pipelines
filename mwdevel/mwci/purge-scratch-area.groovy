@@ -13,14 +13,17 @@ pipeline {
   }
 
   stages {
-    stage('clean'){ steps { sh "find /srv/scratch/ -maxdepth 1 -type d -ctime +${params.DAYS} -print -exec rm -rf {} \\;"
-      } }
+    stage('clean'){
+      steps {  sh "find /srv/scratch/ -maxdepth 1 -type d -ctime +${params.DAYS} -print -exec rm -rf {} \\;" }
+    }
   }
 
   post {
     failure {
       slackSend color: 'danger', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Failure (<${env.BUILD_URL}|Open>)"
     }
+
+    success { currentBuild.result = 'SUCCESS' }
 
     changed {
       script{
@@ -31,3 +34,4 @@ pipeline {
     }
   }
 }
+

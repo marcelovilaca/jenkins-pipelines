@@ -31,12 +31,22 @@ pipeline {
       }
     }
 
-    stage('deploy'){ steps { sh "mvn -U -B deploy -P cnaf-snapshots" } }
+    stage('deploy'){ steps {  sh "mvn -U -B deploy -P cnaf-snapshots" } }
   }
 
   post {
     failure {
       slackSend color: 'danger', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Failure (<${env.BUILD_URL}|Open>)"
+    }
+
+    success { currentBuild.result = 'SUCCESS' }
+
+    changed {
+      script{
+        if('SUCCESS'.equals(currentBuild.result)) {
+          slackSend color: 'good', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Back to normal (<${env.BUILD_URL}|Open>)"
+        }
+      }
     }
   }
 }
