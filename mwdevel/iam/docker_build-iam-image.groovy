@@ -67,15 +67,17 @@ try {
     parallel(
         "iam-login-service": {
           node('docker'){
-            unstash 'iam-code'
+            dir('login-service'){
+              unstash 'iam-code'
 
-            withEnv([
-              "IAM_LOGIN_SERVICE_IMAGE=${params.LOGIN_SERVICE_IMAGE_NAME}",
-              "IAM_LOGIN_SERVICE_VERSION=${pom_version}",
-            ]){
-              dir('iam-login-service/docker'){
-                sh "sh build-prod-image.sh"
-                sh "sh push-prod-image.sh"
+              withEnv([
+                "IAM_LOGIN_SERVICE_IMAGE=${params.LOGIN_SERVICE_IMAGE_NAME}",
+                "IAM_LOGIN_SERVICE_VERSION=${pom_version}",
+              ]){
+                dir('iam-login-service/docker'){
+                  sh "sh build-prod-image.sh"
+                  sh "sh push-prod-image.sh"
+                }
               }
             }
           }
@@ -83,14 +85,16 @@ try {
 
         "iam-test-client":{
           node('docker'){
-            unstash 'iam-code'
+            dir('test-client'){
+              unstash 'iam-code'
 
-            withEnv([
-              "IAM_TEST_CLIENT_IMAGE=${params.TEST_CLIENT_IMAGE_NAME}"
-            ]) {
-              dir('iam-test-client/docker'){
-                sh "sh build-prod-image.sh"
-                sh "sh push-prod-image.sh"
+              withEnv([
+                "IAM_TEST_CLIENT_IMAGE=${params.TEST_CLIENT_IMAGE_NAME}"
+              ]) {
+                dir('iam-test-client/docker'){
+                  sh "sh build-prod-image.sh"
+                  sh "sh push-prod-image.sh"
+                }
               }
             }
           }
