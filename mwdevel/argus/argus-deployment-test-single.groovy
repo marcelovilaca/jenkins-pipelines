@@ -10,7 +10,7 @@ pipeline {
     choice (name: 'PLATFORM', choices: 'centos7\ncentos6', description: 'OS platform.')
     string (name: 'TESTSUITE_REPO', defaultValue: 'https://github.com/argus-authz/argus-robot-testsuite', description: '' )
     string (name: 'TESTSUITE_BRANCH', defaultValue: 'master', description: '')
-    choice (name: 'REPO', choices: 'beta\nstable', description: 'Repository where download Argus RPMs.')
+    choice (name: 'REPO', choices: 'ci\nbeta\nstable', description: 'Repository where download Argus RPMs.')
     choice (name: 'GH_REPO', choices: 'staging\nproduction', description: 'Github repository holding Argus RPMs.')
   }
 
@@ -27,7 +27,7 @@ pipeline {
         script{
           def url = ''
 
-          if(!"${params.REPO}".equals("ci")) {
+          if("${params.REPO}" != "ci") {
             def gh_repo="https://marcocaberletti.github.io"
             def version="${params.PLATFORM}".replace("centos", "el")
 

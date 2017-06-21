@@ -27,7 +27,7 @@ pipeline {
         script{
           def url = ''
 
-          if(!"${params.REPO}".equals("ci")) {
+          if("${params.REPO}" != "ci") {
             def gh_repo="https://marcocaberletti.github.io"
             def version="${params.PLATFORM}".replace("centos", "el")
 
