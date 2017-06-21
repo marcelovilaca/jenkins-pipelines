@@ -59,8 +59,6 @@ pipeline {
           passThreshold: 100,
           reportFileName: 'report.html',
           unstableThreshold: 90])
-
-        script { currentBuild.result = 'SUCCESS' }
       }
     }
   }
@@ -68,6 +66,10 @@ pipeline {
   post {
     failure {
       slackSend color: 'danger', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Failure (<${env.BUILD_URL}|Open>)"
+    }
+
+    unstable {
+      slackSend color: 'warning', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Unstable (<${env.BUILD_URL}|Open>)"
     }
 
     changed {
