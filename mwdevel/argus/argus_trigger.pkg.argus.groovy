@@ -4,7 +4,7 @@ properties([
   buildDiscarder(logRotator(numToKeepStr: '5')),
   pipelineTriggers([cron('@daily')]),
   parameters([
-    string(name: 'PKG_TAG', defaultValue: 'release/1.7.1', description: 'The branch of the pkg.argus repo' ),
+    string(name: 'PKG_TAG', defaultValue: 'pap-16', description: 'The branch of the pkg.argus repo' ),
     string(name: 'COMPONENT_LIST', defaultValue: 'pap pdp-pep-common pep-common pdp pep-server pep-api-c pep-api-java pepcli gsi-pep-callout metapackage', description: 'Components to build' ),
     choice(name: 'INCLUDE_BUILD_NUMBER', choices: '1\n0', description: 'Flag to include/exclude build number.')
   ]),
