@@ -4,7 +4,7 @@ properties([
   buildDiscarder(logRotator(numToKeepStr: '5')),
   parameters([
     string(name: 'PKG_TAG', defaultValue: 'release/1.7.1', description: ''),
-    string(name: 'COMPONENTS', defaultValue: 'pap pdp-pep-common pep-common pdp pep-server pep-api-c pep-api-java pepcli gsi-pep-callout metapackage', description: 'Components to build' ),
+    string(name: 'COMPONENT_LIST', defaultValue: '', description: 'Components to build' ),
     string(name: 'GITHUB_REPO', defaultValue: 'github.com/marcocaberletti/repo', description: '')
   ]),
 ])
@@ -19,7 +19,7 @@ try {
     rpm_job = build job: 'argus_trigger.pkg.argus',
     parameters: [
       string(name: 'PKG_TAG', value: "${params.PKG_TAG}"),
-      string(name: 'COMPONENTS', value: "${params.COMPONENTS}"),
+      string(name: 'COMPONENT_LIST', value: "${params.COMPONENT_LIST}"),
       booleanParam(name: 'INCLUDE_PKG_BUILD_NUMBER', value: false),
     ]
   }

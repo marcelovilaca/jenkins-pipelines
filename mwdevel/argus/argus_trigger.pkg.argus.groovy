@@ -5,32 +5,38 @@ properties([
   pipelineTriggers([cron('@daily')]),
   parameters([
     string(name: 'PKG_TAG', defaultValue: 'release/1.7.1', description: 'The branch of the pkg.argus repo' ),
-    string(name: 'COMPONENTS', defaultValue: 'pap pdp-pep-common pep-common pdp pep-server pep-api-c pep-api-java pepcli gsi-pep-callout metapackage', description: 'Components to build' ),
-    booleanParam(name:'INCLUDE_PKG_BUILD_NUMBER', defaultValue: true, description: 'When true, creates packages which include a build number in their version.')
+    string(name: 'COMPONENT_LIST', defaultValue: 'pap pdp-pep-common pep-common pdp pep-server pep-api-c pep-api-java pepcli gsi-pep-callout metapackage', description: 'Components to build' ),
+    choice(name: 'INCLUDE_BUILD_NUMBER', choices: '1\n0', description: 'Flag to include/exclude build number.')
   ]),
 ])
 
 def build_number = ''
 def pkg_el6
 def pkg_el7
+def job_to_build
 
 stage('create RPMs'){
-  if(params.INCLUDE_PKG_BUILD_NUMBER) {
+  if("${params.INCLUDE_BUILD_NUMBER}" == "1") {
     build_number = new Date().format("yyyyMMddHHmmss")
   }
 
+  def branch = java.net.URLEncoder.encode("${params.PKG_TAG}", "UTF-8")
+  job_to_build = "argus-authz/pkg.argus/${branch}"
+
   parallel(
       'centos6': {
-        pkg_el6 = build job: 'argus-authz/pkg.argus/release%2F1.7.1', propagate: false, parameters: [
-          string(name: 'COMPONENTS', value: "${params.COMPONENTS}"),
+        pkg_el6 = build job: "${job_to_build}", propagate: false, parameters: [
+          string(name: 'COMPONENT_LIST', value: "${params.COMPONENT_LIST}"),
           string(name: 'PLATFORM', value: 'centos6'),
+          string(name: 'INCLUDE_BUILD_NUMBER', value: "${params.INCLUDE_BUILD_NUMBER}"),
           string(name: 'PKG_BUILD_NUMBER', value: "${build_number}")
         ]
       },
       'centos7': {
-        pkg_el7 = build job: 'argus-authz/pkg.argus/release%2F1.7.1', propagate: false, parameters: [
-          string(name: 'COMPONENTS', value: "${params.COMPONENTS}"),
+        pkg_el7 = build job: "${job_to_build}", propagate: false, parameters: [
+          string(name: 'COMPONENT_LIST', value: "${params.COMPONENT_LIST}"),
           string(name: 'PLATFORM', value: 'centos7'),
+          string(name: 'INCLUDE_BUILD_NUMBER', value: "${params.INCLUDE_BUILD_NUMBER}"),
           string(name: 'PKG_BUILD_NUMBER', value: "${build_number}")
         ]
       }
@@ -49,13 +55,13 @@ node('generic'){
 
     try {
       step ([$class: 'CopyArtifact',
-        projectName: 'argus-authz/pkg.argus/release%2F1.7.1',
+        projectName: "${job_to_build}",
         filter: 'repo/centos6/**',
         selector: [$class: 'SpecificBuildSelector', buildNumber: "${pkg_el6.number}"]
       ])
 
       step ([$class: 'CopyArtifact',
-        projectName: 'argus-authz/pkg.argus/release%2F1.7.1',
+        projectName: "${job_to_build}",
         filter: 'repo/centos7/**',
         selector: [$class: 'SpecificBuildSelector', buildNumber: "${pkg_el7.number}"]
       ])
