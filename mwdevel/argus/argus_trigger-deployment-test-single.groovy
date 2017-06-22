@@ -6,7 +6,7 @@ pipeline {
     buildDiscarder(logRotator(numToKeepStr: '5'))
   }
 
-  triggers { cron('@daily') }
+  triggers {  upstream 'argus_trigger.pkg.argus, docker_builds-argus-deployment-images'  }
 
   parameters {
     choice (name: 'REPO', choices: 'ci\nbeta\nstable', description: 'Repository where download Argus RPMs.')

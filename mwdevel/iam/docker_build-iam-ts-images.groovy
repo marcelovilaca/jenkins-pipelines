@@ -42,6 +42,7 @@ pipeline {
         parallel(
             "iam-nginx": {
               node('docker'){
+                deleteDir()
                 unstash 'iam-nginx'
                 sh "docker build --no-cache -t italiangrid/iam-nginx:latest ."
                 sh "docker tag italiangrid/iam-nginx:latest ${DOCKER_REGISTRY_HOST}/italiangrid/iam-nginx:latest"
@@ -50,6 +51,7 @@ pipeline {
             },
             "trust-anchors": {
               node('docker'){
+                deleteDir()
                 unstash 'trust-anchors'
                 sh './build-image.sh'
                 sh './push-image.sh'
@@ -57,6 +59,7 @@ pipeline {
             },
             "iam-testsuite": {
               node('docker'){
+                deleteDir()
                 unstash 'iam-ts'
                 sh './build-image.sh'
                 sh './push-image.sh'
@@ -68,10 +71,6 @@ pipeline {
   }
 
   post {
-    always {
-      deleteDir()
-    }
-
     failure {
       slackSend color: 'danger', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Failure (<${env.BUILD_URL}|Open>)"
     }
