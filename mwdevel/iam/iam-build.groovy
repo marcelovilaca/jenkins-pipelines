@@ -19,19 +19,17 @@ try {
 
   stage('build'){
     node('maven') {
-      dir('/iam'){
-        unstash 'code'
-        sh "echo v`sh utils/print-pom-version.sh` > version.txt"
-        sh "git rev-parse --short HEAD > version-commit.txt"
-        sh "mvn clean package -U -Dmaven.test.failure.ignore '-Dtest=!%regex[.*NotificationConcurrentTests.*]' -DfailIfNoTests=false"
+      unstash 'code'
+      sh "echo v`sh utils/print-pom-version.sh` > version.txt"
+      sh "git rev-parse --short HEAD > version-commit.txt"
+      sh "mvn clean package -U -Dmaven.test.failure.ignore"
 
-        junit '**/target/surefire-reports/TEST-*.xml'
-        dir('iam-login-service/target') { archive 'iam-login-service.war' }
-        dir('iam-test-client/target') { archive 'iam-test-client.jar' }
-        dir('docker/saml-idp/idp/shibboleth-idp/metadata'){ archive 'idp-metadata.xml' }
-        archive 'version.txt'
-        archive 'version-commit.txt'
-      }
+      junit '**/target/surefire-reports/TEST-*.xml'
+      dir('iam-login-service/target') { archive 'iam-login-service.war' }
+      dir('iam-test-client/target') { archive 'iam-test-client.jar' }
+      dir('docker/saml-idp/idp/shibboleth-idp/metadata'){ archive 'idp-metadata.xml' }
+      archive 'version.txt'
+      archive 'version-commit.txt'
     }
   }
 
@@ -43,33 +41,29 @@ try {
     parallel(
         'coverage' : {
           node('maven'){
-            dir('/iam'){
-              unstash 'code'
-              sh "mvn ${cobertura_opts}"
+            unstash 'code'
+            sh "mvn ${cobertura_opts}"
 
-              publishHTML(target: [
-                reportName           : 'Coverage Report',
-                reportDir            : 'iam-login-service/target/site/cobertura/',
-                reportFiles          : 'index.html',
-                keepAll              : true,
-                alwaysLinkToLastBuild: true,
-                allowMissing         : false
-              ])
-            }
+            publishHTML(target: [
+              reportName           : 'Coverage Report',
+              reportDir            : 'iam-login-service/target/site/cobertura/',
+              reportFiles          : 'index.html',
+              keepAll              : true,
+              alwaysLinkToLastBuild: true,
+              allowMissing         : false
+            ])
           }
         },
         'checkstyle' : {
           node('maven'){
-            dir('/iam'){
-              unstash 'code'
-              dir('iam-persistence') { sh "mvn clean install" }
-              sh "mvn ${checkstyle_opts}"
+            unstash 'code'
+            dir('iam-persistence') { sh "mvn clean install" }
+            sh "mvn ${checkstyle_opts}"
 
-              step([$class: 'hudson.plugins.checkstyle.CheckStylePublisher',
-                pattern: '**/checkstyle-result.xml',
-                healty: '20',
-                unHealty: '100'])
-            }
+            step([$class: 'hudson.plugins.checkstyle.CheckStylePublisher',
+              pattern: '**/checkstyle-result.xml',
+              healty: '20',
+              unHealty: '100'])
           }
         },
         'static analysis': {
