@@ -14,28 +14,25 @@ def build_number = ''
 def pkg_el7, pkg_deb
 
 try {
-  stage('create packages'){
 
-    if("${params.INCLUDE_BUILD_NUMBER}" == "1") {
-      build_number = new Date().format("yyyyMMddHHmmss")
-    }
+  if("${params.INCLUDE_BUILD_NUMBER}" == "1") {
+    build_number = new Date().format("yyyyMMddHHmmss")
+  }
 
-    parallel(
-        "centos7": {
-          pkg_el7 = build job: "pkg.indigo-iam/${params.PKG_TAG}", parameters: [
-            string(name: 'PKG_BUILD_NUMBER', value: "${build_number}"),
-            string(name: 'INCLUDE_BUILD_NUMBER', value: "${params.INCLUDE_BUILD_NUMBER}"),
-            string(name: 'PLATFORM', value: "centos7")
-          ]
-        },
-        "ubuntu1604": {
-          pkg_deb = build job: "pkg.indigo-iam/${params.PKG_TAG}", parameters: [
-            string(name: 'PKG_BUILD_NUMBER', value: "${build_number}"),
-            string(name: 'INCLUDE_BUILD_NUMBER', value: "${params.INCLUDE_BUILD_NUMBER}"),
-            string(name: 'PLATFORM', value: "ubuntu1604")
-          ]
-        }
-        )
+  stage('create RPM'){
+    pkg_el7 = build job: "pkg.indigo-iam/${params.PKG_TAG}", parameters: [
+      string(name: 'PKG_BUILD_NUMBER', value: "${build_number}"),
+      string(name: 'INCLUDE_BUILD_NUMBER', value: "${params.INCLUDE_BUILD_NUMBER}"),
+      string(name: 'PLATFORM', value: "centos7")
+    ]
+  }
+
+  stage('create DEB'){
+    pkg_deb = build job: "pkg.indigo-iam/${params.PKG_TAG}", parameters: [
+      string(name: 'PKG_BUILD_NUMBER', value: "${build_number}"),
+      string(name: 'INCLUDE_BUILD_NUMBER', value: "${params.INCLUDE_BUILD_NUMBER}"),
+      string(name: 'PLATFORM', value: "ubuntu1604")
+    ]
   }
 
   def iam_root = "/mnt/packages/repo/indigo-iam"
@@ -84,12 +81,9 @@ try {
 
   stage('update symlink'){
     node('generic'){
-      dir("${iam_root}"){
-        sh "rm -vf ${iam_root}/nightly"
-        sh "ln -vs ./builds/build_${BUILD_NUMBER}/ nightly"
-      }
+      sh "rm -vf ${iam_root}/nightly"
+      dir("${iam_root}"){ sh "ln -vs ./builds/build_${BUILD_NUMBER}/ nightly" }
       sh "find ${iam_root}/builds/ -maxdepth 1 -type d -ctime +10 -print -exec rm -rf {} \\;"
-//      sh "find /mnt/packages/repo -type d -name '*@tmp' -print -exec rm -rf {} \\;"
     }
   }
 }catch(e) {
