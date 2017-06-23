@@ -36,7 +36,6 @@ try {
   stage('code analysis'){
     def cobertura_opts = 'cobertura:cobertura -Dmaven.test.failure.ignore'
     def checkstyle_opts = 'checkstyle:check -Dcheckstyle.config.location=google_checks.xml'
-    def sonar_job
 
     parallel(
         'coverage' : {
@@ -67,22 +66,13 @@ try {
           }
         },
         'static analysis': {
-          sonar_job = build job: 'sonar-maven-analysis', propagate: false,
+          build job: 'sonar-maven-analysis', propagate: false,
           parameters: [
             string(name: 'REPO',   value: "${params.REPO}"),
             string(name: 'BRANCH', value: "${params.BRANCH}"),
           ]
         },
         )
-
-    currentBuild.result = sonar_job.result
-
-    if(currentBuild.result == 'UNSTABLE') {
-      slackSend color: 'warning', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Unstable (<${env.BUILD_URL}|Open>)"
-    }else if(currentBuild.result == 'FAILURE') {
-      slackSend color: 'danger', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Failure (<${env.BUILD_URL}|Open>)"
-      sh "exit 1"
-    }
   }
 }catch(e) {
   slackSend color: 'danger', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Failure (<${env.BUILD_URL}|Open>)"
