@@ -34,7 +34,7 @@ try {
   }
 
   stage('code analysis'){
-    def cobertura_opts = 'cobertura:cobertura -Dmaven.test.failure.ignore \'-Dtest=!%regex[.*NotificationConcurrentTests.*]\' -DfailIfNoTests=false'
+    def cobertura_opts = 'cobertura:cobertura -Dmaven.test.failure.ignore'
     def checkstyle_opts = 'checkstyle:check -Dcheckstyle.config.location=google_checks.xml'
     def sonar_job
 
