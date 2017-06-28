@@ -5,7 +5,7 @@ properties([
   pipelineTriggers([cron('@daily')]),
   parameters([
     string(name: 'REPO',   defaultValue: 'https://github.com/marcocaberletti/iam.git', description: '' ),
-    string(name: 'BRANCH', defaultValue: 'mail-tests', description: '' )
+    string(name: 'BRANCH', defaultValue: 'fix/88', description: '' )
   ]),
 ])
 
