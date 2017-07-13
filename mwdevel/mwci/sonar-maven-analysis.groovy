@@ -3,8 +3,8 @@
 properties([
   buildDiscarder(logRotator(numToKeepStr: '10')),
   parameters([
-    string(name: 'REPO',   defaultValue: ''),
-    string(name: 'BRANCH', defaultValue: ''),
+    string(name: 'REPO',   defaultValue: '', description: 'Git code repository'),
+    string(name: 'BRANCH', defaultValue: '', description: 'Repository branch'),
   ])
 ])
 
