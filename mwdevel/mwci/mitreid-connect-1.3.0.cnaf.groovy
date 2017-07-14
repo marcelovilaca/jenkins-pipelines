@@ -33,7 +33,7 @@ pipeline {
 
     stage('deploy'){
       steps {
-        sh "mvn -U -B deploy -P cnaf-snapshots"
+        sh "mvn -U -B clean deploy"
         script { currentBuild.result = 'SUCCESS' }
       }
     }
