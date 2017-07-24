@@ -23,6 +23,11 @@ pipeline {
     }
 
     stage('run'){
+      environment {
+        PLATFORM="${params.PLATFORM}"
+        TESTSUITE_REPO="${params.TESTSUITE_REPO}"
+        TESTSUITE_BRANCH="${params.TESTSUITE_BRANCH}"
+      }
       steps{
         script{
           def url = ''
@@ -38,15 +43,9 @@ pipeline {
             url = "${gh_repo}/repo/${params.REPO}/${version}/RPMS/"
           }
 
-          withEnv([
-            "PLATFORM=${params.PLATFORM}",
-            "TESTSUITE_REPO=${params.TESTSUITE_REPO}",
-            "TESTSUITE_BRANCH=${params.TESTSUITE_BRANCH}"
-          ]){
-            dir('all-in-one'){
-              sh "export FACTER_ARGUS_REPO_BASE_URL=${url}"
-              sh "./deploy.sh"
-            }
+          dir('all-in-one'){
+            sh "export FACTER_ARGUS_REPO_BASE_URL=${url}"
+            sh "./deploy.sh"
           }
         }
 

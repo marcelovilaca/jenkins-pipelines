@@ -20,7 +20,7 @@ pipeline {
   stages {
     stage('run centos6'){
       steps{
-        build job: 'argus-deployment-test-single', propagate: false,
+        build job: 'argus-deployment-test-single',
         parameters: [
           string(name: 'PLATFORM', value: 'centos6'),
           string(name: 'TESTSUITE_REPO', value: "${params.TESTSUITE_REPO}"),
@@ -33,7 +33,7 @@ pipeline {
 
     stage('run centos7'){
       steps{
-        build job: 'argus-deployment-test-single', propagate: false,
+        build job: 'argus-deployment-test-single',
         parameters: [
           string(name: 'PLATFORM', value: 'centos7'),
           string(name: 'TESTSUITE_REPO', value: "${params.TESTSUITE_REPO}"),
