@@ -32,7 +32,12 @@ pipeline {
       }
     }
 
-    stage('deploy'){ steps { sh "mvn clean -U -B deploy" } }
+    stage('deploy'){
+      steps {
+        sh "mvn clean -U -B deploy"
+        script { currentBuild.result = 'SUCCESS' }
+      }
+    }
   }
 
   post {

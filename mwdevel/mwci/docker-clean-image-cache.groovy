@@ -16,6 +16,8 @@ pipeline {
         echo('Running on:')
         sh "docker info | grep Name: | tail -n1"
         sh 'bin/docker-remove-unused-images'
+
+        script { currentBuild.result = 'SUCCESS' }
       }
     }
   }
