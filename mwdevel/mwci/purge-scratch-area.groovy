@@ -6,10 +6,10 @@ pipeline {
     buildDiscarder(logRotator(numToKeepStr: '5'))
   }
 
-  triggers { cron('@weekly') }
+  triggers { cron('@daily') }
 
   parameters {
-    string(name: 'DAYS', defaultValue: '30', description: '' )
+    string(name: 'DAYS', defaultValue: '15', description: '' )
   }
 
   stages {
