@@ -6,10 +6,6 @@ pipeline {
     buildDiscarder(logRotator(numToKeepStr: '5'))
   }
 
-  triggers {
-    upstream(upstreamProjects: "argus_trigger.pkg.argus, docker_builds-argus-deployment-images", threshold: hudson.model.Result.SUCCESS)
-  }
-
   parameters {
     choice (name: 'REPO', choices: 'ci\nbeta\nstable', description: 'Repository where download Argus RPMs.')
     choice (name: 'GH_REPO', choices: 'staging\nproduction', description: 'Github repository holding Argus RPMs.')
