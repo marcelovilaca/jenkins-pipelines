@@ -20,7 +20,7 @@ try {
     parameters: [
       string(name: 'PKG_TAG', value: "${params.PKG_TAG}"),
       string(name: 'COMPONENT_LIST', value: "${params.COMPONENT_LIST}"),
-      booleanParam(name: 'INCLUDE_PKG_BUILD_NUMBER', value: '0'),
+      string(name: 'INCLUDE_PKG_BUILD_NUMBER', value: '0'),
     ]
   }
 
