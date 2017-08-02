@@ -43,7 +43,7 @@ try {
       def github_repo_branch = "gh-pages"
 
       dir('repo'){
-        git url: "${github_repo_url}", branch: "${github_repo_branch}"
+        sh "git clone --depth=1 ${github_repo_url} -b ${github_repo_branch} ."
 
         sh "rsync -avu /mnt/packages/repo/argus/${target}/ ${target}/"
 
