@@ -1,4 +1,4 @@
-#!groovy
+#!/usr/bin/env groovy
 
 properties([
   buildDiscarder(logRotator(numToKeepStr: '5')),

@@ -1,3 +1,5 @@
+#!/usr/bin/env groovy
+
 pipeline {
   agent { label 'maven' }
 
@@ -27,7 +29,8 @@ pipeline {
       }
     }
 
-    stage('deploy'){ steps { sh "mvn clean -U -B deploy" } }
+    stage('deploy'){ steps { sh "mvn clean -U -B deploy"
+      } }
   }
 
   post {

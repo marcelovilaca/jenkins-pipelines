@@ -1,3 +1,5 @@
+#!/usr/bin/env groovy
+
 pipeline {
   agent { label 'kubectl' }
 
@@ -78,9 +80,7 @@ spec:
         sh "kubectl logs -f ${env.POD_NAME}"
       }
 
-      post {
-        always {   sh "kubectl delete -f ${env.POD_FILE}" }
-      }
+      post { always {   sh "kubectl delete -f ${env.POD_FILE}" } }
     }
 
     stage('update secret'){
