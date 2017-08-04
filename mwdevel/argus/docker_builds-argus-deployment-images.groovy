@@ -19,7 +19,7 @@ pipeline {
 
   options {
     buildDiscarder(logRotator(numToKeepStr: '5'))
-    timeout(time: 1, unit: 'HOURS')
+    timeout(time: 2, unit: 'HOURS')
   }
 
   triggers { cron('@daily') }
