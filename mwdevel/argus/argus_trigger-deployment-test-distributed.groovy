@@ -41,6 +41,12 @@ pipeline {
         ]
       }
     }
+
+    stage('result'){
+      steps {
+        script { currentBuild.result = 'SUCCESS' }
+      }
+    }
   }
 
   post {
