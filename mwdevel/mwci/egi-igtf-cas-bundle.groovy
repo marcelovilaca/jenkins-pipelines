@@ -4,7 +4,7 @@ pipeline {
   agent { label 'kubectl' }
 
   options {
-    timeout(time: 1, unit: 'HOURS')
+    timeout(time: 30, unit: 'MINUTES')
     buildDiscarder(logRotator(numToKeepStr: '5'))
   }
 
@@ -75,12 +75,13 @@ spec:
     stage('run'){
       steps {
         sh "kubectl apply -f ${env.POD_FILE}"
-        sh "while ( [ 'Running' != `kubectl get pod ${env.POD_NAME} -o jsonpath='{.status.phase}'` ] ); do echo 'Waiting pod...'; sleep 5; done"
+        sh "while ( [ 'Running' != `kubectl get pod ${env.POD_NAME} -o jsonpath='{.status.phase}'` ] ); do echo 'Waiting pod...'; sleep 1; done"
 
         sh "kubectl logs -f ${env.POD_NAME}"
       }
 
-      post { always {   sh "kubectl delete -f ${env.POD_FILE}" } }
+      post { always { sh "kubectl delete -f ${env.POD_FILE}"
+        } }
     }
 
     stage('update secret'){
