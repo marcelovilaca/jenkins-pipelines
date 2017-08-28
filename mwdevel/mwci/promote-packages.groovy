@@ -58,8 +58,10 @@ pipeline{
           def dest_dir = "/mnt/packages/repo/${params.PRODUCT}/${params.TARGET}"
 
           if(fileExists("${dest_dir}/xenial")) {
-            dir("${dest_dir}/xenial"){
-              sh "dpkg-scanpackages -m amd64 | gzip > amd64/Packages.gz"
+            sh """
+              cd ${dest_dir}/xenial
+              dpkg-scanpackages -m amd64 | gzip > amd64/Packages.gz
+            """
             }
           }
         }
