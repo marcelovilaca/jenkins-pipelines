@@ -1,7 +1,7 @@
 #!/usr/bin/env groovy
 
 pipeline{
-  agent { label 'generic' }
+  agent none
 
   options {
     buildDiscarder(logRotator(numToKeepStr: '5'))
@@ -16,6 +16,7 @@ pipeline{
 
   stages {
     stage('promote'){
+      agent { label 'generic' }
       steps {
         script {
           def pkg_root = "/mnt/packages/repo/${params.PRODUCT}"
@@ -30,7 +31,9 @@ pipeline{
         }
       }
     }
+
     stage('rebuild RPMs repo'){
+      agent { label 'generic' }
       steps {
         script {
           def dest_dir = "/mnt/packages/repo/${params.PRODUCT}/${params.TARGET}"
@@ -47,6 +50,7 @@ pipeline{
         }
       }
     }
+
     stage('rebuild DEBs repo'){
       agent { label 'generic-ubuntu' }
       steps {
@@ -54,9 +58,16 @@ pipeline{
           def dest_dir = "/mnt/packages/repo/${params.PRODUCT}/${params.TARGET}"
 
           if(fileExists("${dest_dir}/xenial")) {
-            dir("${dest_dir}/xenial") {  sh "dpkg-scanpackages -m amd64 | gzip > amd64/Packages.gz"  }
+            sh "cd ${dest_dir}/xenial"
+            sh "dpkg-scanpackages -m amd64 | gzip > amd64/Packages.gz"
           }
         }
+      }
+    }
+
+    stage('result'){
+      steps {
+        script { currentBuild.result = 'SUCCESS' }
       }
     }
   }
@@ -64,6 +75,14 @@ pipeline{
   post {
     failure {
       slackSend color: 'danger', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Failure (<${env.BUILD_URL}|Open>)"
+    }
+
+    changed {
+      script{
+        if('SUCCESS'.equals(currentBuild.result)) {
+          slackSend color: 'good', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Back to normal (<${env.BUILD_URL}|Open>)"
+        }
+      }
     }
   }
 }
