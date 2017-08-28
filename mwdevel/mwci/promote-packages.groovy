@@ -62,7 +62,6 @@ pipeline{
               cd ${dest_dir}/xenial
               dpkg-scanpackages -m amd64 | gzip > amd64/Packages.gz
             """
-            }
           }
         }
       }
