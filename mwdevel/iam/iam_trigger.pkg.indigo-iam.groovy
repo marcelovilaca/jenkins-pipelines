@@ -4,7 +4,7 @@ properties([
   buildDiscarder(logRotator(numToKeepStr: '5')),
   pipelineTriggers([cron('@daily')]),
   parameters([
-    string(name: 'PKG_TAG', defaultValue: 'master', description: 'The branch of the pkg.argus repo' ),
+    string(name: 'PKG_TAG', defaultValue: 'v1.0.0', description: 'The branch of the pkg.argus repo' ),
     choice(name: 'INCLUDE_BUILD_NUMBER', choices: '1\n0', description: 'Flag to include/exclude build number.')
   ]),
 ])
