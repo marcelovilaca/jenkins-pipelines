@@ -20,7 +20,7 @@ pipeline{
       steps {
         dir('repo'){
           sh "git lfs clone -b ${params.GH_REPO_BRANCH} https://github.com/${params.GH_REPO} ."
-          sh "rsync -avu --delete /mnt/packages/repo/${params.PRODUCT}/${params.TARGET}/ ${params.TARGET}/"
+          sh "rsync -av --delete /mnt/packages/repo/${params.PRODUCT}/${params.TARGET}/ ${params.TARGET}/"
 
           withCredentials([
             usernamePassword(credentialsId: 'marco-github-credentials', passwordVariable: 'git_password', usernameVariable: 'git_username')
