@@ -27,7 +27,7 @@ pipeline{
             src_dir = "${pkg_root}/builds/build_${params.BUILD_NUMBER}"
           }
 
-          sh "rsync -avu ${src_dir}/ ${dest_dir}/"
+          sh "rsync -av --delete ${src_dir}/ ${dest_dir}/"
         }
       }
     }
