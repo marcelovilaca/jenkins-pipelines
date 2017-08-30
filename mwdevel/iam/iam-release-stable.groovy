@@ -44,21 +44,18 @@ pipeline {
         """   }
     }
 
-    stage('Publish to Github'){
+    stage('Publish to Nexus'){
       steps{
         slackSend color: 'warning', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Requires approval to the next stage (<${env.BUILD_URL}|Open>)"
         script{
           timeout(time: 60, unit: 'MINUTES'){
-            approver = input(message: 'Push packages to GitHub repo?', submitterParameter: 'approver')
+            approver = input(message: 'Push packages to Nexus repo?', submitterParameter: 'approver')
           }
 
-          build job: 'github-publisher',
+          build job: 'nexus-publisher',
           parameters: [
             string(name: 'PRODUCT', value: 'indigo-iam'),
-            string(name: 'GH_REPO', value: "${params.GITHUB_REPO}"),
-            string(name: 'GH_REPO_BRANCH', value: 'master'),
             string(name: 'TARGET', value: "${env.TARGET}"),
-            string(name: 'COMMIT_MSG', value: "${params.COMMIT_MSG}"),
           ]
         }
       }
