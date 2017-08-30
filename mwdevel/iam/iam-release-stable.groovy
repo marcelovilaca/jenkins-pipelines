@@ -9,11 +9,6 @@ pipeline {
     buildDiscarder(logRotator(numToKeepStr: '5'))
   }
 
-  parameters {
-    string(name: 'GITHUB_REPO', defaultValue: 'marcocaberletti/test-lfs-repo', description: 'GitHub repo, owner/repo')
-    string(name: 'COMMIT_MSG', defaultValue: 'Promote packages from beta to stable', description: 'Commit message')
-  }
-
   environment {
     TITLE = "Indigo IAM Login Service (CentOS 7)"
     TARGET = "stable"
