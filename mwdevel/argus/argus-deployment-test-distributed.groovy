@@ -1,7 +1,7 @@
 #!/usr/bin/env groovy
 
 pipeline {
-  agent { label 'docker' }
+  agent { label 'docker-compose' }
 
   options {
     timeout(time: 2, unit: 'HOURS')
