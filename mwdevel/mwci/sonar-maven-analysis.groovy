@@ -35,7 +35,7 @@ pipeline {
           withSonarQubeEnv{ sh "mvn clean -U ${cobertura_opts} ${checkstyle_opts} ${SONAR_MAVEN_GOAL} -Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.login=${SONAR_AUTH_TOKEN}" }
         }
         dir('target/sonar') {
-          stash name: 'sonar-report', include: 'report-task.txt'
+          stash name: 'sonar-report', includes: 'report-task.txt'
         }
       }
     }

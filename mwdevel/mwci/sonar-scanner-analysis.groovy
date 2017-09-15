@@ -42,7 +42,7 @@ pipeline {
         }
 
         dir('.scannerwork') {
-          stash name: 'sonar-report', include: 'report-task.txt'
+          stash name: 'sonar-report', includes: 'report-task.txt'
         }
       }
     }
