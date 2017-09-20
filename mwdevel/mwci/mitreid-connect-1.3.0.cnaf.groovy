@@ -18,7 +18,7 @@ pipeline {
     stage('prepare'){
       steps {
         git branch: "${params.BRANCH}", url: 'https://github.com/indigo-iam/OpenID-Connect-Java-Spring-Server.git'
-        sh 'sed -i \'s#http:\\/\\/radiohead\\.cnaf\\.infn\\.it:8081\\/nexus\\/content\\/repositories#https:\\/\\/repo\\.cloud\\.cnaf\\.infn\\.it\\/repository#g\' pom.xml'
+        sh 'sed -i \'s#http:\\/\\/radiohead\\.cnaf\\.infn\\.it:8081\\/nexus\\/content\\/repositories#http:\\/\\/nexus\\.default\\.svc\\.cluster\\.local\\/repository#g\' pom.xml'
       }
     }
 
