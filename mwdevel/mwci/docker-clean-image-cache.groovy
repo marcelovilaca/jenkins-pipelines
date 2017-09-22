@@ -8,7 +8,7 @@ pipeline {
     buildDiscarder(logRotator(numToKeepStr: '5'))
   }
 
-  triggers { cron('@daily') }
+  triggers { cron('H H/12 * * *') }
 
   stages {
     stage('clean'){
