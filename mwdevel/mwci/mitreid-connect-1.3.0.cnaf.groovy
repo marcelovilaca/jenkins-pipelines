@@ -8,7 +8,7 @@ pipeline {
     buildDiscarder(logRotator(numToKeepStr: '5'))
   }
 
-  triggers { cron('@daily') }
+  triggers { cron('@midnight') }
 
   parameters {
     string(name: 'BRANCH', defaultValue: 'devel', description: '' )
