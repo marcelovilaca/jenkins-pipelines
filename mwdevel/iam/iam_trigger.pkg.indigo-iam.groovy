@@ -12,6 +12,7 @@ properties([
 
 def build_number = ''
 def pkg_el7, pkg_deb
+def job_name = 'indigo-iam/pkg.indigo-iam'
 
 try {
 
@@ -20,7 +21,7 @@ try {
   }
 
   stage('create RPM'){
-    pkg_el7 = build job: "pkg.indigo-iam/${params.PKG_TAG}", parameters: [
+    pkg_el7 = build job: "${job_name}/${params.PKG_TAG}", parameters: [
       string(name: 'PKG_BUILD_NUMBER', value: "${build_number}"),
       string(name: 'INCLUDE_BUILD_NUMBER', value: "${params.INCLUDE_BUILD_NUMBER}"),
       string(name: 'PLATFORM', value: "centos7")
@@ -28,7 +29,7 @@ try {
   }
 
   stage('create DEB'){
-    pkg_deb = build job: "pkg.indigo-iam/${params.PKG_TAG}", parameters: [
+    pkg_deb = build job: "${job_name}/${params.PKG_TAG}", parameters: [
       string(name: 'PKG_BUILD_NUMBER', value: "${build_number}"),
       string(name: 'INCLUDE_BUILD_NUMBER', value: "${params.INCLUDE_BUILD_NUMBER}"),
       string(name: 'PLATFORM', value: "ubuntu1604")
@@ -40,7 +41,7 @@ try {
   stage('archive RPMs'){
     node('generic'){
       step ([$class: 'CopyArtifact',
-        projectName: "pkg.indigo-iam/${params.PKG_TAG}",
+        projectName: "${job_name}/${params.PKG_TAG}",
         filter: 'repo/centos7/**',
         selector: [$class: 'SpecificBuildSelector', buildNumber: "${pkg_el7.number}"]
       ])
@@ -61,7 +62,7 @@ try {
   stage('archive DEBs'){
     node('generic-ubuntu'){
       step ([$class: 'CopyArtifact',
-        projectName: "pkg.indigo-iam/${params.PKG_TAG}",
+        projectName: "${job_name}/${params.PKG_TAG}",
         filter: 'repo/**',
         selector: [$class: 'SpecificBuildSelector', buildNumber: "${pkg_deb.number}"]
       ])
