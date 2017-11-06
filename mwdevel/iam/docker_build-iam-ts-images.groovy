@@ -18,7 +18,7 @@ pipeline {
     stage('prepare code'){
       agent { label 'generic' }
       steps {
-        sh "git clone https://github.com/marcocaberletti/iam-deployment-test.git iam-nginx"
+        sh "git clone https://github.com/indigo-iam/iam-deployment-test.git iam-nginx"
         script {
           dir('iam-nginx/iam/nginx'){
             stash include: './*', name: 'iam-nginx'
@@ -28,12 +28,6 @@ pipeline {
         script {
           dir('docker-images/trust-anchors'){
             stash include: './*', name: 'trust-anchors'
-          }
-        }
-        sh "git clone -b ${params.BRANCH} https://github.com/marcocaberletti/iam-robot-testsuite.git iam-ts"
-        script{
-          dir('iam-ts/docker'){
-            stash include: './*', name: 'iam-ts'
           }
         }
       }
@@ -55,14 +49,6 @@ pipeline {
               node('docker'){
                 deleteDir()
                 unstash 'trust-anchors'
-                sh './build-image.sh'
-                sh './push-image.sh'
-              }
-            },
-            "iam-testsuite": {
-              node('docker'){
-                deleteDir()
-                unstash 'iam-ts'
                 sh './build-image.sh'
                 sh './push-image.sh'
               }
