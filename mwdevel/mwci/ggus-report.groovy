@@ -36,7 +36,7 @@ spec:
   volumes:
   - name: scratch-area
     nfs:
-      server: 10.0.0.30
+      server: 90.147.170.180
       path: /srv/kubernetes/volumes/scratch
   containers:
   - name: ggus-report
