@@ -52,9 +52,8 @@ spec:
   restartPolicy: Never
   volumes:
   - name: scratch-area
-    nfs:
-      server: 10.0.0.30
-      path: /srv/kubernetes/volumes/scratch
+    persistentVolumeClaim:
+      claimName: scratch-area-claim
   containers:
   - name: egi-igtf-cas
     image: ${env.DOCKER_REGISTRY_HOST}/italiangrid/egi-igtf-cas:latest
@@ -67,14 +66,14 @@ spec:
     - name: TZ
       value: Europe/Rome
 """
-          writeFile file: "${env.POD_FILE}", text: "${pod_template}"
+          writeFile file: "${env.OUTPUT_DIR}/${env.POD_FILE}", text: "${pod_template}"
         }
       }
     }
 
     stage('run'){
       steps {
-        sh "kubectl apply -f ${env.POD_FILE}"
+        sh "kubectl apply -f ${env.OUTPUT_DIR}/${env.POD_FILE}"
         sh "while ( [ 'Running' != `kubectl get pod ${env.POD_NAME} -o jsonpath='{.status.phase}'` ] ); do echo 'Waiting pod...'; sleep 1; done"
 
         sh "kubectl logs -f ${env.POD_NAME}"
@@ -82,7 +81,7 @@ spec:
 
       post { 
         always { 
-          sh "kubectl delete -f ${env.POD_FILE}"
+          sh "kubectl delete -f ${env.OUTPUT_DIR}/${env.POD_FILE}"
         } 
       }
     }
@@ -92,8 +91,9 @@ spec:
         sh """
           kubectl create secret generic ${params.SECRET_NAME} \\
             --namespace=default --from-file=ca.crt=${env.OUTPUT_DIR}/tls-ca-bundle.pem \\
-            --dry-run -o yaml | \\
-          kubectl replace secret ${params.SECRET_NAME} -f -
+            --dry-run -o yaml > ${env.OUTPUT_DIR}/${params.SECRET_NAME}.secret.yaml
+          kubectl --namespace=default delete -f ${env.OUTPUT_DIR}/${params.SECRET_NAME}.secret.yaml --ignore-not-found=true
+          kubectl --namespace=default create -f ${env.OUTPUT_DIR}/${params.SECRET_NAME}.secret.yaml
           """
       }
     }
@@ -101,7 +101,8 @@ spec:
     stage('archive'){
       steps {
         dir("${env.OUTPUT_DIR}"){
-          archiveArtifacts 'tls-ca-bundle.pem' 
+          archiveArtifacts 'tls-ca-bundle.pem'
+          archiveArtifacts '*.yaml' 
         }
         script { currentBuild.result = 'SUCCESS' }
       }

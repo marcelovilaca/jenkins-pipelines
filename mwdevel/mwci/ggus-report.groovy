@@ -35,9 +35,8 @@ spec:
   restartPolicy: Never
   volumes:
   - name: scratch-area
-    nfs:
-      server: 90.147.170.180
-      path: /srv/kubernetes/volumes/scratch
+    persistentVolumeClaim:
+      claimName: scratch-area-claim
   containers:
   - name: ggus-report
     image: ${env.DOCKER_REGISTRY_HOST}/italiangrid/ggus-mon:latest
