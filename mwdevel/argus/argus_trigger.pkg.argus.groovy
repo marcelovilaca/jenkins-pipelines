@@ -6,7 +6,8 @@ properties([
   parameters([
     string(name: 'PKG_TAG', defaultValue: 'release/1.7.2', description: 'The branch of the pkg.argus repo' ),
     string(name: 'COMPONENT_LIST', defaultValue: 'pap pdp-pep-common pep-common pdp pep-server pep-api-c pep-api-java pepcli gsi-pep-callout metapackage', description: 'Components to build' ),
-    choice(name: 'INCLUDE_BUILD_NUMBER', choices: '1\n0', description: 'Flag to include/exclude build number.')
+    choice(name: 'INCLUDE_BUILD_NUMBER', choices: '1\n0', description: 'Flag to include/exclude build number.'),
+    string(name: 'USE_DOCKER_REGISTRY', defaultValue: '', description: 'Use private docker registry; empty is false' ),
   ]),
 ])
 
@@ -29,7 +30,8 @@ stage('create RPMs'){
           string(name: 'COMPONENT_LIST', value: "${params.COMPONENT_LIST}"),
           string(name: 'PLATFORM', value: 'centos6'),
           string(name: 'INCLUDE_BUILD_NUMBER', value: "${params.INCLUDE_BUILD_NUMBER}"),
-          string(name: 'PKG_BUILD_NUMBER', value: "${build_number}")
+          string(name: 'PKG_BUILD_NUMBER', value: "${build_number}"),
+          string(name: 'USE_DOCKER_REGISTRY', value: "${params.USE_DOCKER_REGISTRY}")
         ]
       },
       'centos7': {
@@ -37,7 +39,8 @@ stage('create RPMs'){
           string(name: 'COMPONENT_LIST', value: "${params.COMPONENT_LIST}"),
           string(name: 'PLATFORM', value: 'centos7'),
           string(name: 'INCLUDE_BUILD_NUMBER', value: "${params.INCLUDE_BUILD_NUMBER}"),
-          string(name: 'PKG_BUILD_NUMBER', value: "${build_number}")
+          string(name: 'PKG_BUILD_NUMBER', value: "${build_number}"),
+          string(name: 'USE_DOCKER_REGISTRY', value: "${params.USE_DOCKER_REGISTRY}")
         ]
       }
       )
