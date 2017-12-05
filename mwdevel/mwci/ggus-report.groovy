@@ -2,7 +2,7 @@
 
 pipeline {
   agent { label 'kubectl' }
-
+  
   options {
     timeout(time: 1, unit: 'HOURS')
     buildDiscarder(logRotator(numToKeepStr: '5'))
@@ -19,7 +19,6 @@ pipeline {
   stages {
     stage('prepare'){
       steps {
-        deleteDir()
         sh "mkdir -p ${env.REPORT_DIR}"
 
         script {
@@ -53,18 +52,25 @@ spec:
         }
       }
     }
-
-    stage('run'){
-      steps {
-        sh "kubectl apply -f ${env.POD_FILE}"
-        sh "while ( [ 'Running' != `kubectl get pod ${env.POD_NAME} -o jsonpath='{.status.phase}'` ] ); do echo 'Waiting pod...'; sleep 5; done"
-
-        sh "kubectl logs -f ${env.POD_NAME}"
-      }
-
-      post {  always { sh "kubectl delete -f ${env.POD_FILE}"
-        }  }
-    }
+    
+	stage('run'){
+	  steps {
+	    container('kubectl-runner'){
+	      sh "kubectl apply -f ${env.POD_FILE}"
+	      sh "while ( [ 'Running' != `kubectl get pod ${env.POD_NAME} -o jsonpath='{.status.phase}'` ] ); do echo 'Waiting pod...'; sleep 5; done"
+	
+	      sh "kubectl logs -f ${env.POD_NAME}"
+	    }
+	  }
+	
+	  post {  
+	    always { 
+	      container('kubectl-runner'){
+	        sh "kubectl delete -f ${env.POD_FILE}"
+	      } 
+	    }  
+	  }
+	}
 
     stage('archive'){
       steps {
