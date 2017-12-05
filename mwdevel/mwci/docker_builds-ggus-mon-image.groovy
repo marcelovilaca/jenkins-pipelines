@@ -10,23 +10,37 @@ pipeline {
 
   triggers { cron('@daily') }
 
+  environment {
+    DOCKER_REGISTRY_HOST = "${env.DOCKER_REGISTRY_HOST}"
+  }
+
   stages {
     stage('prepare'){
       steps {
-        deleteDir()
-        git 'https://github.com/italiangrid/docker-scripts'
+        container('docker-runner'){
+          deleteDir()
+          git 'https://github.com/italiangrid/docker-scripts'
+        }
       }
     }
 
     stage('build'){
       steps {
-        dir('ggus-mon-image'){ sh './build-image.sh' }
+        container('docker-runner'){
+          dir('ggus-mon-image'){ 
+            sh './build-image.sh' 
+          }
+        }
       }
     }
 
     stage('push'){
       steps {
-        dir('ggus-mon-image'){ sh './push-image.sh' }
+        container('docker-runner'){
+          dir('ggus-mon-image'){ 
+            sh './push-image.sh' 
+          }
+        }
         script { currentBuild.result = 'SUCCESS' }
       }
     }

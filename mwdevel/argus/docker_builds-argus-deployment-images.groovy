@@ -2,13 +2,15 @@
 
 def build_image(platform, deployment){
   node('docker'){
-    deleteDir()
-    unstash "source"
+    container('docker-runner'){
+      deleteDir()
+      unstash "source"
 
-    dir("${deployment}"){
-      withEnv(["PLATFORM=${platform}"]){
-        sh "./build-images.sh"
-        sh "./push-images.sh"
+      dir("${deployment}"){
+        withEnv(["PLATFORM=${platform}"]){
+          sh "./build-images.sh"
+          sh "./push-images.sh"
+        }
       }
     }
   }

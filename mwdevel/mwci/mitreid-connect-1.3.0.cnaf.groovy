@@ -17,14 +17,18 @@ pipeline {
   stages {
     stage('prepare'){
       steps {
-        git branch: "${params.BRANCH}", url: 'https://github.com/indigo-iam/OpenID-Connect-Java-Spring-Server.git'
-        sh 'sed -i \'s#http:\\/\\/radiohead\\.cnaf\\.infn\\.it:8081\\/nexus\\/content\\/repositories#http:\\/\\/nexus\\.default\\.svc\\.cluster\\.local\\/repository#g\' pom.xml'
+        container('maven-runner'){
+          git branch: "${params.BRANCH}", url: 'https://github.com/indigo-iam/OpenID-Connect-Java-Spring-Server.git'
+          sh 'sed -i \'s#http:\\/\\/radiohead\\.cnaf\\.infn\\.it:8081\\/nexus\\/content\\/repositories#http:\\/\\/nexus\\.default\\.svc\\.cluster\\.local\\/repository#g\' pom.xml'
+        }
       }
     }
 
     stage('deploy'){
       steps {
-        sh "mvn -U -B clean deploy"
+        container('maven-runner'){
+          sh "mvn -U -B clean deploy"
+        }
         script { currentBuild.result = 'SUCCESS' }
       }
     }
