@@ -18,15 +18,21 @@ pipeline {
   stages {
     stage('prepare'){
       steps {
-        git branch: "${params.BRANCH}", url: 'https://github.com/italiangrid/jetty-utils'
-        sh 'sed -i \'s#http:\\/\\/radiohead\\.cnaf\\.infn\\.it:8081\\/nexus\\/content\\/repositories#https:\\/\\/repo\\.cloud\\.ba\\.infn\\.it\\/repository#g\' pom.xml'
+        container('maven-runner'){
+          git branch: "${params.BRANCH}", url: 'https://github.com/italiangrid/jetty-utils'
+          sh 'sed -i \'s#http:\\/\\/radiohead\\.cnaf\\.infn\\.it:8081\\/nexus\\/content\\/repositories#https:\\/\\/repo\\.cloud\\.ba\\.infn\\.it\\/repository#g\' pom.xml'
+        }
       }
     }
 
     stage('deploy'){
       steps {
-        sh "mvn clean -U -B deploy"
-        script { currentBuild.result = 'SUCCESS' }
+        container('maven-runner'){
+          sh "mvn clean -U -B deploy"
+        }
+        script { 
+          currentBuild.result = 'SUCCESS' 
+        }
       }
     }
   }
