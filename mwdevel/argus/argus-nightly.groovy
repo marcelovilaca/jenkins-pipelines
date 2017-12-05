@@ -6,7 +6,7 @@ pipeline {
 	agent none
 	
 	triggers {
-		cron('@daily')
+		cron('@midnight')
 	}
 
 	options {
