@@ -53,10 +53,10 @@ pipeline {
       steps {
         script {
           pkg_deb = build job: "${env.JOB_NAME}/${params.PKG_TAG}", parameters: [
-	    string(name: 'PKG_BUILD_NUMBER', value: "${pkg_build_number}"),
-	    string(name: 'INCLUDE_BUILD_NUMBER', value: "${params.INCLUDE_BUILD_NUMBER}"),
-	    string(name: 'PLATFORM', value: "ubuntu1604")
-	  ]
+            string(name: 'PKG_BUILD_NUMBER', value: "${pkg_build_number}"),
+            string(name: 'INCLUDE_BUILD_NUMBER', value: "${params.INCLUDE_BUILD_NUMBER}"),
+            string(name: 'PLATFORM', value: "ubuntu1604")
+		  ]
         }
       }
     }
@@ -64,21 +64,23 @@ pipeline {
     stage('archive RPMs'){
       agent { label 'generic' }
       steps {
-        script {
-          step ([$class: 'CopyArtifact',
-	    projectName: "${env.JOB_NAME}/${params.PKG_TAG}",
-	    filter: 'repo/centos7/**',
-	    selector: [$class: 'SpecificBuildSelector', buildNumber: "${pkg_el7.number}"]
-	  ])
+        container('generic-runner'){
+          script {
+            step ([$class: 'CopyArtifact',
+              projectName: "${env.JOB_NAME}/${params.PKG_TAG}",
+              filter: 'repo/centos7/**',
+              selector: [$class: 'SpecificBuildSelector', buildNumber: "${pkg_el7.number}"]
+            ])
 		
-	  dir('repo') {
-	    sh 'mkdir -p el7/RPMS'
-	    sh 'mv centos7/* el7/RPMS/'
-	    sh "createrepo el7/RPMS/"
-	    sh "repoview el7/RPMS/"
-	    sh "mkdir -p ${env.IAM_ROOT}/builds/build_${BUILD_NUMBER}"
-	    sh "cp -r el7/ ${env.IAM_ROOT}/builds/build_${BUILD_NUMBER}/"
-	  }
+            dir('repo') {
+              sh "mkdir -p el7/RPMS"
+              sh "mv centos7/* el7/RPMS/"
+              sh "createrepo el7/RPMS/"
+              sh "repoview el7/RPMS/"
+              sh "mkdir -p ${env.IAM_ROOT}/builds/build_${BUILD_NUMBER}"
+              sh "cp -r el7/ ${env.IAM_ROOT}/builds/build_${BUILD_NUMBER}/"
+            }
+          }
         }
       }
     }
@@ -86,21 +88,25 @@ pipeline {
     stage('archive DEBs'){
       agent { label 'generic-ubuntu' }
       steps {
-      	script {
-          step ([$class: 'CopyArtifact',
-            projectName: "${env.JOB_NAME}/${params.PKG_TAG}",
-	    filter: 'repo/**',
-	    selector: [$class: 'SpecificBuildSelector', buildNumber: "${pkg_deb.number}"]
-	  ])
+        container('ubuntu-runner'){
+      	  script {
+            step ([$class: 'CopyArtifact',
+              projectName: "${env.JOB_NAME}/${params.PKG_TAG}",
+              filter: 'repo/**',
+              selector: [$class: 'SpecificBuildSelector', buildNumber: "${pkg_deb.number}"]
+            ])
 	
-	  dir('repo') {
-            def debdir = "xenial/amd64"
-	    sh "mkdir -p ${debdir}"
-	    sh "mv ubuntu1604/*.deb ${debdir}"
-	    dir('xenial') { sh "dpkg-scanpackages -m amd64 | gzip > amd64/Packages.gz" }
-	    sh "mkdir -p ${env.IAM_ROOT}/builds/build_${env.BUILD_NUMBER}"
-	    sh "cp -r xenial/ ${env.IAM_ROOT}/builds/build_${env.BUILD_NUMBER}/"
-	  }
+            dir('repo') {
+              def debdir = "xenial/amd64"
+              sh "mkdir -p ${debdir}"
+              sh "mv ubuntu1604/*.deb ${debdir}"
+              dir('xenial') { 
+                sh "dpkg-scanpackages -m amd64 | gzip > amd64/Packages.gz" 
+              }
+              sh "mkdir -p ${env.IAM_ROOT}/builds/build_${env.BUILD_NUMBER}"
+              sh "cp -r xenial/ ${env.IAM_ROOT}/builds/build_${env.BUILD_NUMBER}/"
+            }
+          }
       	}
       }
     }
@@ -108,9 +114,13 @@ pipeline {
     stage('update symlink'){
       agent { label 'generic' }
       steps {
-        sh "rm -vf ${env.IAM_ROOT}/nightly"
-        dir("${env.IAM_ROOT}"){ sh "ln -vs ./builds/build_${env.BUILD_NUMBER}/ nightly" }
-        sh "find ${iam_root}/builds/ -maxdepth 1 -type d -ctime +10 -print -exec rm -rf {} \\;"
+        container('generic-runner'){
+          sh "rm -vf ${env.IAM_ROOT}/nightly"
+          dir("${env.IAM_ROOT}"){ 
+            sh "ln -vs ./builds/build_${env.BUILD_NUMBER}/ nightly" 
+          }
+          sh "find ${iam_root}/builds/ -maxdepth 1 -type d -ctime +10 -print -exec rm -rf {} \\;"
+        }
       }
     }
   

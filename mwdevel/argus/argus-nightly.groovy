@@ -41,7 +41,7 @@ pipeline {
         script{
          parallel(
            'centos6': {
-	      pkg_el6 = build job: "${job_to_build}", parameters: [
+             pkg_el6 = build job: "${job_to_build}", parameters: [
                 string(name: 'COMPONENT_LIST', value: "${env.COMPONENT_LIST}"),
                 string(name: 'PLATFORM', value: 'centos6'),
                 string(name: 'INCLUDE_BUILD_NUMBER', value: "${env.INCLUDE_BUILD_NUMBER}"),
@@ -65,8 +65,8 @@ pipeline {
 
     stage('archive'){
       agent { label 'generic' }
-      container('generic-runner'){
-        steps {
+      steps {
+        container('generic-runner'){
           script {
             step ([$class: 'CopyArtifact',
               projectName: "${job_to_build}",
