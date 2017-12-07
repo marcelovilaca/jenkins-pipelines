@@ -23,6 +23,10 @@ pipeline {
   }
 
   triggers { cron('@daily') }
+  
+  environment {
+    DOCKER_REGISTRY_HOST = "${env.DOCKER_REGISTRY_HOST}"
+  }
 
   stages {
     stage('prepare'){
