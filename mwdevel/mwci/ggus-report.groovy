@@ -37,7 +37,7 @@ spec:
     persistentVolumeClaim:
       claimName: scratch-area-claim
   containers:
-  - name: ggus-report
+  - name: ggus-report-${env.BUILD_NUMBER}
     image: ${env.DOCKER_REGISTRY_HOST}/italiangrid/ggus-mon:latest
     volumeMounts:
     - name: scratch-area
