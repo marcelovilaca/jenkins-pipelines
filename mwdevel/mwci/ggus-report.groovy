@@ -12,7 +12,7 @@ pipeline {
 
   environment {
     REPORT_DIR = "/srv/scratch/${env.BUILD_TAG}/reports"
-    POD_NAME = "ggus-report"
+    POD_NAME = "ggus-report-${env.BUILD_NUMBER}"
     POD_FILE = "ggus-report.pod.yaml"
   }
 
