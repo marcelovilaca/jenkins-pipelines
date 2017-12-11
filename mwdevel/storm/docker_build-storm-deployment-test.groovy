@@ -12,7 +12,7 @@ pipeline {
 
   environment {
     DOCKER_REGISTRY_HOST = "${env.DOCKER_REGISTRY_HOST}"
-    DIRECTORY = "storm-testsuite-image"
+    DIRECTORY = "storm-deployment-test"
   }
 
   stages {
