@@ -29,37 +29,40 @@ pipeline {
         PLATFORM="${params.PLATFORM}"
         TESTSUITE_REPO="${params.TESTSUITE_REPO}"
         TESTSUITE_BRANCH="${params.TESTSUITE_BRANCH}"
+        DOCKER_REGISTRY_HOST = "${env.DOCKER_REGISTRY_HOST}"
       }
       steps{
-        script{
-          def url = ''
+        container('docker-runner'){
+          script{
+            def url = ''
 
-          if("${params.REPO}" != "ci") {
-            def gh_repo="https://marcocaberletti.github.io"
-            def version="${params.PLATFORM}".replace("centos", "el")
+            if("${params.REPO}" != "ci") {
+              def gh_repo="https://marcocaberletti.github.io"
+              def version="${params.PLATFORM}".replace("centos", "el")
 
-            if("${params.GH_REPO}".equals("production")) {
-              gh_repo="https://argus-authz.github.io"
+              if("${params.GH_REPO}".equals("production")) {
+                gh_repo="https://argus-authz.github.io"
+              }
+
+              url = "${gh_repo}/repo/${params.REPO}/${version}/RPMS/"
             }
 
-            url = "${gh_repo}/repo/${params.REPO}/${version}/RPMS/"
+            dir('all-in-one'){
+              sh "export FACTER_ARGUS_REPO_BASE_URL=${url}"
+              sh "./deploy.sh"
+            }
           }
 
-          dir('all-in-one'){
-            sh "export FACTER_ARGUS_REPO_BASE_URL=${url}"
-            sh "./deploy.sh"
-          }
+          step([$class: 'RobotPublisher',
+            disableArchiveOutput: false,
+            logFileName: 'log.html',
+            otherFiles: '',
+            outputFileName: 'output.xml',
+            outputPath: "all-in-one/argus_reports/reports",
+            passThreshold: 100,
+            reportFileName: 'report.html',
+            unstableThreshold: 90])
         }
-
-        step([$class: 'RobotPublisher',
-          disableArchiveOutput: false,
-          logFileName: 'log.html',
-          otherFiles: '',
-          outputFileName: 'output.xml',
-          outputPath: "all-in-one/argus_reports/reports",
-          passThreshold: 100,
-          reportFileName: 'report.html',
-          unstableThreshold: 90])
       }
     }
   }
