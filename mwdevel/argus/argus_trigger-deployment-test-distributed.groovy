@@ -1,10 +1,12 @@
 #!/usr/bin/env groovy
 
+def test_el6, test_el7
+
 pipeline {
   agent none
 
   options {
-    timeout(time: 2, unit: 'HOURS')
+    timeout(time: 3, unit: 'HOURS')
     buildDiscarder(logRotator(numToKeepStr: '5'))
   }
 
@@ -17,34 +19,45 @@ pipeline {
 
   stages {
     stage('run centos6'){
-      steps{
-        build job: 'argus-deployment-test-distributed',
-        parameters: [
-          string(name: 'PLATFORM', value: 'centos6'),
-          string(name: 'TESTSUITE_REPO', value: "${params.TESTSUITE_REPO}"),
-          string(name: 'TESTSUITE_BRANCH', value: "${params.TESTSUITE_BRANCH}"),
-          string(name: 'REPO', value: "${params.REPO}"),
-          string(name: 'GH_REPO', value: "${params.GH_REPO}"),
-        ]
+      steps {
+        script {
+          test_el6 = build job: 'argus-deployment-test-distributed',
+          propagate: false,
+          parameters: [
+            string(name: 'PLATFORM', value: 'centos6'),
+            string(name: 'TESTSUITE_REPO', value: "${params.TESTSUITE_REPO}"),
+            string(name: 'TESTSUITE_BRANCH', value: "${params.TESTSUITE_BRANCH}"),
+            string(name: 'REPO', value: "${params.REPO}"),
+            string(name: 'GH_REPO', value: "${params.GH_REPO}"),
+          ]
+        }
       }
     }
 
     stage('run centos7'){
-      steps{
-        build job: 'argus-deployment-test-distributed',
-        parameters: [
-          string(name: 'PLATFORM', value: 'centos7'),
-          string(name: 'TESTSUITE_REPO', value: "${params.TESTSUITE_REPO}"),
-          string(name: 'TESTSUITE_BRANCH', value: "${params.TESTSUITE_BRANCH}"),
-          string(name: 'REPO', value: "${params.REPO}"),
-          string(name: 'GH_REPO', value: "${params.GH_REPO}"),
-        ]
+      steps {
+        script {
+          test_el7 = build job: 'argus-deployment-test-distributed',
+          propagate: false,
+          parameters: [
+            string(name: 'PLATFORM', value: 'centos7'),
+            string(name: 'TESTSUITE_REPO', value: "${params.TESTSUITE_REPO}"),
+            string(name: 'TESTSUITE_BRANCH', value: "${params.TESTSUITE_BRANCH}"),
+            string(name: 'REPO', value: "${params.REPO}"),
+            string(name: 'GH_REPO', value: "${params.GH_REPO}"),
+          ]
+        }
       }
     }
 
     stage('result'){
       steps {
-        script { currentBuild.result = 'SUCCESS' }
+        script {
+          if("FAILURE".equals(test_el6.result) && "FAILURE".equals(test_el7.result)) {
+            currentBuild.result = 'FAILURE'
+            sh "exit 1"
+          }
+        }
       }
     }
   }
