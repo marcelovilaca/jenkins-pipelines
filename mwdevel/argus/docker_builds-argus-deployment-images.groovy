@@ -15,7 +15,7 @@ def build_image(platform, deployment){
 }
 
 pipeline {
-  agent { label 'docker' }
+  agent none
 
   options {
     buildDiscarder(logRotator(numToKeepStr: '5'))
