@@ -16,7 +16,7 @@ pipeline {
 
   environment {
     OUTPUT_DIR = "/srv/scratch/${env.BUILD_TAG}"
-    POD_NAME = "egi-igtf-cas"
+    POD_NAME = "egi-igtf-cas-${env.BUILD_NUMBER}"
     POD_FILE = "egi-igtf-cas.pod.yaml"
     DOCKER_REGISTRY_HOST = "${env.DOCKER_REGISTRY_HOST}"
   }
