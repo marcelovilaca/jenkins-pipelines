@@ -18,16 +18,18 @@ pipeline{
     stage('promote'){
       agent { label 'generic' }
       steps {
-        script {
-          def pkg_root = "/mnt/packages/repo/${params.PRODUCT}"
-          def dest_dir = "${pkg_root}/${params.TARGET}"
-          def src_dir = "${pkg_root}/nightly"
+        container('generic-runner'){
+          script {
+            def pkg_root = "/mnt/packages/repo/${params.PRODUCT}"
+            def dest_dir = "${pkg_root}/${params.TARGET}"
+            def src_dir = "${pkg_root}/nightly"
 
-          if ("" != "${params.BUILD_NUMBER}") {
-            src_dir = "${pkg_root}/builds/build_${params.BUILD_NUMBER}"
+            if ("" != "${params.BUILD_NUMBER}") {
+              src_dir = "${pkg_root}/builds/build_${params.BUILD_NUMBER}"
+            }
+
+            sh "rsync -av ${src_dir}/ ${dest_dir}/"
           }
-
-          sh "rsync -av ${src_dir}/ ${dest_dir}/"
         }
       }
     }
@@ -35,17 +37,19 @@ pipeline{
     stage('rebuild RPMs repo'){
       agent { label 'generic' }
       steps {
-        script {
-          def dest_dir = "/mnt/packages/repo/${params.PRODUCT}/${params.TARGET}"
+        container('generic-runner'){
+          script {
+            def dest_dir = "/mnt/packages/repo/${params.PRODUCT}/${params.TARGET}"
 
-          if(fileExists("${dest_dir}/el6")) {
-            sh "createrepo ${dest_dir}/el6/RPMS"
-            sh "repoview -t '${params.REPO_TITLE} (CentOS 6)' ${dest_dir}/el6/RPMS"
-          }
+            if(fileExists("${dest_dir}/el6")) {
+              sh "createrepo ${dest_dir}/el6/RPMS"
+              sh "repoview -t '${params.REPO_TITLE} (CentOS 6)' ${dest_dir}/el6/RPMS"
+            }
 
-          if(fileExists("${dest_dir}/el7")) {
-            sh "createrepo ${dest_dir}/el7/RPMS"
-            sh "repoview -t '${params.REPO_TITLE} (CentOS 7)' ${dest_dir}/el7/RPMS"
+            if(fileExists("${dest_dir}/el7")) {
+              sh "createrepo ${dest_dir}/el7/RPMS"
+              sh "repoview -t '${params.REPO_TITLE} (CentOS 7)' ${dest_dir}/el7/RPMS"
+            }
           }
         }
       }
@@ -54,14 +58,16 @@ pipeline{
     stage('rebuild DEBs repo'){
       agent { label 'generic-ubuntu' }
       steps {
-        script {
-          def dest_dir = "/mnt/packages/repo/${params.PRODUCT}/${params.TARGET}"
+        container('ubuntu-runner'){
+          script {
+            def dest_dir = "/mnt/packages/repo/${params.PRODUCT}/${params.TARGET}"
 
-          if(fileExists("${dest_dir}/xenial")) {
-            sh """
-              cd ${dest_dir}/xenial
-              dpkg-scanpackages -m amd64 | gzip > amd64/Packages.gz
-            """
+            if(fileExists("${dest_dir}/xenial")) {
+              sh """
+                cd ${dest_dir}/xenial
+                dpkg-scanpackages -m amd64 | gzip > amd64/Packages.gz
+              """
+            }
           }
         }
       }

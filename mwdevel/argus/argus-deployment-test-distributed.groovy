@@ -15,24 +15,19 @@ pipeline {
     choice (name: 'REPO', choices: 'ci\nbeta\nstable', description: 'Repository where download Argus RPMs.')
     choice (name: 'GH_REPO', choices: 'staging\nproduction', description: 'Github repository holding Argus RPMs.')
   }
+  
+  environment {
+    PLATFORM = "${params.PLATFORM}"
+    TESTSUITE_REPO = "${params.TESTSUITE_REPO}"
+    TESTSUITE_BRANCH = "${params.TESTSUITE_BRANCH}"
+    DOCKER_REGISTRY_HOST = "${env.DOCKER_REGISTRY_HOST}"
+  }
 
   stages {
-    stage('prepare'){
-      steps{
-        cleanWs notFailBuild: true
-        git 'https://github.com/marcocaberletti/argus-deployment-test.git'
-      }
-    }
-
-    stage('run'){
-      environment {
-        PLATFORM="${params.PLATFORM}"
-        TESTSUITE_REPO="${params.TESTSUITE_REPO}"
-        TESTSUITE_BRANCH="${params.TESTSUITE_BRANCH}"
-        DOCKER_REGISTRY_HOST = "${env.DOCKER_REGISTRY_HOST}"
-      }
-      steps{
+    stage('run') {
+      steps {
         container('docker-runner'){
+          git 'https://github.com/marcocaberletti/argus-deployment-test.git'
           script{
             def url = ''
 
@@ -52,17 +47,31 @@ pipeline {
               sh "./deploy.sh"
             }
           }
-
-          step([$class: 'RobotPublisher',
-            disableArchiveOutput: false,
-            logFileName: 'log.html',
-            otherFiles: '',
-            outputFileName: 'output.xml',
-            outputPath: "distributed/argus_reports/reports",
-            passThreshold: 100,
-            reportFileName: 'report.html',
-            unstableThreshold: 90])
         }
+      }
+    }
+    
+    stage('publish report'){
+      steps {
+        container('docker-runner'){
+          script {
+            step([$class: 'RobotPublisher',
+              disableArchiveOutput: false,
+              logFileName: 'log.html',
+              otherFiles: '',
+              outputFileName: 'output.xml',
+              outputPath: "distributed/argus_reports/reports",
+              passThreshold: 100,
+              reportFileName: 'report.html',
+              unstableThreshold: 90])
+          }
+        }
+      }
+    }
+    
+    stage('result'){
+      steps {
+        script { currentBuild.result.result = 'SUCCESS' }
       }
     }
   }

@@ -17,11 +17,13 @@ pipeline{
   stages {
     stage('push'){
       steps {
-        withCredentials([
-          usernamePassword(credentialsId: 'jenkins-nexus', passwordVariable: 'password', usernameVariable: 'username')
-        ]) {
-          sh "nexus-assets-remove -u ${username} -p ${password} -H ${env.NEXUS_URL} -r ${params.PRODUCT} -q ${params.TARGET}/el7/RPMS/repodata"
-          sh "nexus-assets-upload -u ${username} -p ${password} -H ${env.NEXUS_URL} -r ${params.PRODUCT} -d /mnt/packages/repo/${params.PRODUCT}/${params.TARGET}/"
+        container('generic-runner'){
+          withCredentials([
+            usernamePassword(credentialsId: 'jenkins-nexus', passwordVariable: 'password', usernameVariable: 'username')
+          ]) {
+            sh "nexus-assets-remove -u ${username} -p ${password} -H ${env.NEXUS_URL} -r ${params.PRODUCT} -q ${params.TARGET}/el7/RPMS/repodata"
+            sh "nexus-assets-upload -u ${username} -p ${password} -H ${env.NEXUS_URL} -r ${params.PRODUCT} -d /mnt/packages/repo/${params.PRODUCT}/${params.TARGET}/"
+          }
         }
       }
     }
