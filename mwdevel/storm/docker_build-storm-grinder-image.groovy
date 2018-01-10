@@ -23,6 +23,8 @@ pipeline {
         container('docker-runner'){
           deleteDir()
           git 'https://github.com/italiangrid/docker-scripts'
+          sh "docker pull ${DOCKER_REGISTRY_HOST}/italiangrid/storm-testsuite"
+          sh "docker tag ${DOCKER_REGISTRY_HOST}/italiangrid/storm-testsuite italiangrid/storm-testsuite"
         }
       }
     }
