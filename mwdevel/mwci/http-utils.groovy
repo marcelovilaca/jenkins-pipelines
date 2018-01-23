@@ -20,7 +20,7 @@ pipeline {
       steps {
         container('maven-runner'){
           git branch: "${params.BRANCH}", url: 'https://github.com/italiangrid/https-utils'
-          sh 'sed -i \'s#http:\\/\\/radiohead\\.cnaf\\.infn\\.it:8081\\/nexus\\/content\\/repositories#https:\\/\\/repo\\.cloud\\.ba\\.infn\\.it\\/repository#g\' pom.xml'
+          sh 'sed -i \'s#http:\\/\\/radiohead\\.cnaf\\.infn\\.it:8081\\/nexus\\/content\\/repositories#https:\\/\\/repo\\.cloud\\.cnaf\\.infn\\.it\\/repository#g\' pom.xml'
         }
       }
     }
@@ -30,8 +30,8 @@ pipeline {
         container('maven-runner'){
           sh "mvn clean -U -B deploy"
         }
-        script { 
-          currentBuild.result = 'SUCCESS' 
+        script {
+          currentBuild.result = 'SUCCESS'
         }
       }
     }
