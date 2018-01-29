@@ -102,6 +102,8 @@ pipeline {
     stage('archive'){
       agent { label 'generic' }
       steps {
+	deleteDir()
+	      
         unstash 'rpm'
         unstash 'deb'
 
