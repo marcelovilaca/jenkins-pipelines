@@ -11,10 +11,6 @@ pipeline {
     buildDiscarder(logRotator(numToKeepStr: '5'))
   }
     
-  triggers {
-    cron('@daily')
-  }
-    
   parameters {
     string(name: 'PKG_TAG', defaultValue: 'v1.2.0', description: 'The branch of the pkg.argus repo' )
     choice(name: 'INCLUDE_BUILD_NUMBER', choices: '1\n0', description: 'Flag to include/exclude build number')
