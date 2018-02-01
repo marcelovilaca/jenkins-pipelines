@@ -13,6 +13,7 @@ pipeline {
   environment {
     DOCKER_REGISTRY_HOST = "${env.DOCKER_REGISTRY_HOST}"
 	REPOSITORY = "https://github.com/enricovianello/storm-deployment-tests"
+	BRANCH = "cdmi"
     DIRECTORY = "docker/storm-testsuite"
   }
 
@@ -21,7 +22,7 @@ pipeline {
       steps {
         container('docker-runner'){
           deleteDir()
-          git "${env.REPOSITORY}"
+          git url: "${env.REPOSITORY}" branch: "${env.BRANCH}"
         }
       }
     }
