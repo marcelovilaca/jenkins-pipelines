@@ -12,7 +12,8 @@ pipeline {
 
   environment {
     DOCKER_REGISTRY_HOST = "${env.DOCKER_REGISTRY_HOST}"
-    DIRECTORY = "storm-testsuite-image"
+	REPOSITORY = "https://github.com/enricovianello/storm-deployment-tests"
+    DIRECTORY = "docker/storm-testsuite"
   }
 
   stages {
@@ -20,7 +21,7 @@ pipeline {
       steps {
         container('docker-runner'){
           deleteDir()
-          git 'https://github.com/italiangrid/docker-scripts'
+          git "${env.REPOSITORY}"
         }
       }
     }
@@ -29,7 +30,7 @@ pipeline {
       steps {
         container('docker-runner'){
           dir("${env.DIRECTORY}"){ 
-            sh 'sh build-image.sh' 
+            sh 'sh build-images.sh' 
           }
         }
       }
@@ -39,8 +40,7 @@ pipeline {
       steps {
         container('docker-runner'){
           dir("${env.DIRECTORY}"){ 
-            sh "docker tag italiangrid/storm-testsuite ${DOCKER_REGISTRY_HOST}/italiangrid/storm-testsuite"
-			sh "docker push ${DOCKER_REGISTRY_HOST}/italiangrid/storm-testsuite"
+            sh "sh push-images.sh"
           }
         }
       }

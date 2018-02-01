@@ -13,7 +13,7 @@ pipeline {
   environment {
     DOCKER_REGISTRY_HOST = "${env.DOCKER_REGISTRY_HOST}"
 	REPOSITORY = "https://github.com/enricovianello/storm-deployment-tests"
-    DIRECTORY = "docker/storm-deployment"
+    DIRECTORY = "docker/cdmi-server"
   }
 
   stages {

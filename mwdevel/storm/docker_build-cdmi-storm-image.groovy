@@ -12,7 +12,8 @@ pipeline {
 
   environment {
     DOCKER_REGISTRY_HOST = "${env.DOCKER_REGISTRY_HOST}"
-    DIRECTORY = "cdmi-storm"
+	REPOSITORY = "https://github.com/enricovianello/storm-deployment-tests"
+    DIRECTORY = "docker/cdmi-storm"
   }
 
   stages {
@@ -20,7 +21,7 @@ pipeline {
       steps {
         container('docker-runner'){
           deleteDir()
-          git 'https://github.com/italiangrid/docker-scripts'
+          git "${env.REPOSITORY}"
         }
       }
     }
