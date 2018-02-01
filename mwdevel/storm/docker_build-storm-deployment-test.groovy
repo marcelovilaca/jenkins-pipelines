@@ -22,7 +22,7 @@ pipeline {
       steps {
         container('docker-runner'){
           deleteDir()
-          git url: "${env.REPOSITORY}" branch: "${env.BRANCH}"
+          git url: "${env.REPOSITORY}", branch: "${env.BRANCH}"
         }
       }
     }
