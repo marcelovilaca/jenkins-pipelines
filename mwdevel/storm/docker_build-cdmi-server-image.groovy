@@ -31,7 +31,7 @@ pipeline {
       steps {
         container('docker-runner'){
           dir("${env.DIRECTORY}"){ 
-            sh 'sh build-images.sh' 
+            sh 'sh build-image.sh' 
           }
         }
       }
@@ -41,7 +41,7 @@ pipeline {
       steps {
         container('docker-runner'){
           dir("${env.DIRECTORY}"){ 
-            sh "sh push-images.sh"
+            sh "sh push-image.sh"
           }
         }
       }
