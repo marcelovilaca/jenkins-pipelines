@@ -8,7 +8,9 @@ pipeline {
     buildDiscarder(logRotator(numToKeepStr: '5'))
   }
 
-  triggers { cron('@daily') }
+  triggers {
+	upstream(upstreamProjects: 'docker_build-cdmi-server-image', threshold: hudson.model.Result.SUCCESS)
+  }
 
   environment {
     DOCKER_REGISTRY_HOST = "${env.DOCKER_REGISTRY_HOST}"
