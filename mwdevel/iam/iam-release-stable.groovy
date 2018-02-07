@@ -19,24 +19,30 @@ pipeline {
     stage('Promote RPMs from Beta to Stable'){
       agent { label 'generic' }
       steps {
-        dir("${env.PKG_ROOT}"){
-          sh "rsync -avu beta/ ${env.TARGET}/"
+        container('generic-runner'){
+          dir("${env.PKG_ROOT}"){
+            sh "rsync -avu beta/ ${env.TARGET}/"
 
-          sh """
-            cd ${env.TARGET}/
-            createrepo el7/RPMS
-            repoview -t '${env.TITLE}' el7/RPMS
-          """
+            sh """
+              cd ${env.TARGET}/
+              createrepo el7/RPMS
+              repoview -t '${env.TITLE}' el7/RPMS
+            """
+          }
         }
       }
     }
 
     stage('Promote DEBs from Beta to Stable'){
       agent { label 'generic-ubuntu'}
-      steps {   sh """
-          cd ${env.PKG_ROOT}/${env.TARGET}/xenial
-          dpkg-scanpackages -m amd64 | gzip > amd64/Packages.gz
-        """   }
+      steps {
+        container('ubuntu-runner'){   
+          sh """
+            cd ${env.PKG_ROOT}/${env.TARGET}/xenial
+            dpkg-scanpackages -m amd64 | gzip > amd64/Packages.gz
+          """
+        }
+      }
     }
 
     stage('Publish to Nexus'){
