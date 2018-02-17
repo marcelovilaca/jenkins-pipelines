@@ -1,6 +1,6 @@
 #!/usr/bin/env groovy
 
-def pkg_build_number = ''
+def pkg_build_number = 'nightly'
 def pkg_el7, pkg_deb
 
 pipeline {
@@ -103,7 +103,7 @@ pipeline {
       agent { label 'generic' }
       steps {
 	deleteDir()
-	      
+
         unstash 'rpm'
         unstash 'deb'
 
