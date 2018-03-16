@@ -1,7 +1,7 @@
 #!/usr/bin/env groovy
 
 pipeline {
-  agent { label 'kubectl' }
+  agent none
 
   options {
     timeout(time: 2, unit: 'HOURS')
@@ -26,7 +26,6 @@ pipeline {
       agent { label 'docker' }
       steps{
         container('docker-runner'){
-          deleteDir()
           git 'https://github.com/marcocaberletti/docker'
           dir('egi-igtf-cas') {
             sh "./build-image.sh"
@@ -37,9 +36,9 @@ pipeline {
     }
 
     stage('prepare'){
+      agent { label 'kubectl' }
       steps {
         container('kubectl-runner'){
-          deleteDir()
           sh "mkdir -p ${env.OUTPUT_DIR}"
 
           script {
@@ -76,6 +75,7 @@ spec:
     }
 
     stage('run'){
+      agent { label 'kubectl' }
       steps {
         container('kubectl-runner'){
           sh "kubectl apply -f ${env.OUTPUT_DIR}/${env.POD_FILE}"
@@ -95,6 +95,7 @@ spec:
     }
 
     stage('update secret'){
+      agent { label 'kubectl' }
       steps {
         container('kubectl-runner'){
           sh """
@@ -109,12 +110,12 @@ spec:
     }
 
     stage('archive'){
+      agent { label 'generic' }
       steps {
         dir("${env.OUTPUT_DIR}"){
           archiveArtifacts 'tls-ca-bundle.pem'
           archiveArtifacts '*.yaml' 
         }
-        script { currentBuild.result = 'SUCCESS' }
       }
     }
   }
@@ -126,7 +127,7 @@ spec:
 
     changed {
       script{
-        if('SUCCESS'.equals(currentBuild.result)) {
+        if('SUCCESS'.equals(currentBuild.currentResult)) {
           slackSend color: 'good', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Back to normal (<${env.BUILD_URL}|Open>)"
         }
       }
