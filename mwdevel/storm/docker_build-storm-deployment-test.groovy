@@ -12,8 +12,8 @@ pipeline {
 
   environment {
     DOCKER_REGISTRY_HOST = "${env.DOCKER_REGISTRY_HOST}"
-	REPOSITORY = "https://github.com/enricovianello/storm-deployment-tests"
-	BRANCH = "cdmi"
+    REPOSITORY = "https://github.com/italiangrid/storm-deployment-tests"
+    BRANCH = "master"
     DIRECTORY = "docker/storm-deployment"
   }
 
