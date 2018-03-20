@@ -14,7 +14,9 @@ pipeline {
 
   environment {
     DOCKER_REGISTRY_HOST = "${env.DOCKER_REGISTRY_HOST}"
-    DIRECTORY = "grinder"
+    REPOSITORY = "https://github.com/italiangrid/grinder-load-testsuite"
+    BRANCH = "develop"
+    DIRECTORY = "docker"
   }
 
   stages {
@@ -22,9 +24,9 @@ pipeline {
       steps {
         container('docker-runner'){
           deleteDir()
-          git 'https://github.com/italiangrid/docker-scripts'
-          sh "docker pull ${DOCKER_REGISTRY_HOST}/italiangrid/storm-testsuite"
-          sh "docker tag ${DOCKER_REGISTRY_HOST}/italiangrid/storm-testsuite italiangrid/storm-testsuite"
+          git url: "${env.REPOSITORY}", branch: "${env.BRANCH}"
+          sh "docker pull ${env.DOCKER_REGISTRY_HOST}/italiangrid/storm-testsuite"
+          sh "docker tag ${env.DOCKER_REGISTRY_HOST}/italiangrid/storm-testsuite italiangrid/storm-testsuite"
         }
       }
     }
@@ -33,7 +35,7 @@ pipeline {
       steps {
         container('docker-runner'){
           dir("${env.DIRECTORY}"){ 
-            sh 'sh build-image.sh' 
+            sh 'docker build -t ${env.DOCKER_REGISTRY_HOST}/italiangrid/grinder .' 
           }
         }
       }
@@ -43,8 +45,7 @@ pipeline {
       steps {
         container('docker-runner'){
           dir("${env.DIRECTORY}"){ 
-            sh "docker tag italiangrid/grinder ${DOCKER_REGISTRY_HOST}/italiangrid/grinder"
-            sh "docker push ${DOCKER_REGISTRY_HOST}/italiangrid/grinder"
+            sh "docker push ${env.DOCKER_REGISTRY_HOST}/italiangrid/grinder"
           }
         }
       }
