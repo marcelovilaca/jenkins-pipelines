@@ -35,7 +35,7 @@ pipeline {
       steps {
         container('docker-runner'){
           dir("${env.DIRECTORY}"){ 
-            sh 'docker build -t ${env.DOCKER_REGISTRY_HOST}/italiangrid/grinder .' 
+            sh "docker build -t ${env.DOCKER_REGISTRY_HOST}/italiangrid/grinder ."
           }
         }
       }
