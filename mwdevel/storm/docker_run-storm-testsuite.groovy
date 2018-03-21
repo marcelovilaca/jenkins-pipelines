@@ -19,7 +19,7 @@ pipeline {
   parameters {
     choice(choices: 'develop\nmaster', description: '', name: 'TESTSUITE_BRANCH')
     string(defaultValue: "omii006-vm03.cnaf.infn.it", description: '', name: 'STORM_BE_HOST')
-    string(defaultValue: "omii003-vm01.cnaf.infn.it", description: '', name: 'CDMI_ENDPOINT')
+    string(defaultValue: "omii003-vm01.cnaf.infn.it:8888", description: '', name: 'CDMI_ENDPOINT')
     string(defaultValue: "to-be-fixed", description: '', name: 'TESTSUITE_EXCLUDE')
     string(defaultValue: "tests", description: '', name: 'TESTSUITE_SUITE')
   }
