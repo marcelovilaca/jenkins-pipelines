@@ -21,12 +21,12 @@ pipeline {
     choice(choices: 'develop\nmaster', description: '', name: 'TESTSUITE_BRANCH')
     string(defaultValue: "test.vo", description: '', name: 'PROXY_VONAME')
     string(defaultValue: "test0", description: '', name: 'PROXY_USER')
-    string(defaultValue: "1", description: '', name: 'GRINDER_PROCESSES')
-    string(defaultValue: "1", description: '', name: 'GRINDER_THREADS')
-    string(defaultValue: "1", description: '', name: 'GRINDER_RUNS')
+    string(defaultValue: "2", description: '', name: 'GRINDER_PROCESSES')
+    string(defaultValue: "10", description: '', name: 'GRINDER_THREADS')
+    string(defaultValue: "100", description: '', name: 'GRINDER_RUNS')
     booleanParam(defaultValue: false, description: '', name: 'GRINDER_CONSOLE_USE')
     string(defaultValue: "localhost", description: '', name: 'GRINDER_CONSOLE_HOST')
-    choice(choices: 'mixdav\nrm_test\nrm_multi\nmkrmdir_test\nptg_test\nptp_test\nls_test\nft_in\nft_out\natlas_renaming\natlas_nested', description: '', name: 'GRINDER_TEST')
+    choice(choices: 'rm_multi\nrm_test\nmkrmdir_test\nptg_test\nptp_test\nptp_pd\nls_test\nft_in\nft_out\nmixdav\natlas_renaming\natlas_nested', description: '', name: 'GRINDER_TEST')
     string(defaultValue: "omii006-vm03.cnaf.infn.it:8444", description: '', name: 'COMMON_STORM_FE_ENDPOINT_LIST')
     string(defaultValue: "omii006-vm03.cnaf.infn.it:8443", description: '', name: 'COMMON_STORM_DAV_ENDPOINT_LIST')
     string(defaultValue: "test.vo", description: '', name: 'COMMON_TEST_STORAGEAREA')
@@ -72,6 +72,7 @@ pipeline {
           script {
               sh "docker run --name ${name} ${envvars} ${image}"
               sh "docker logs ${name}>grinder.log"
+              archive 'grinder.log'
           }
         }
       }
