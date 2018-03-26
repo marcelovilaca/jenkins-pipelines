@@ -12,9 +12,7 @@ pipeline {
 
   triggers { cron('@daily') }
 
-  environment {
-    DOCKER_REGISTRY_HOST = "${env.DOCKER_REGISTRY_HOST}"
-  }
+  environment { DOCKER_REGISTRY_HOST = "${env.DOCKER_REGISTRY_HOST}" }
 
   parameters {
     choice(choices: 'develop\nmaster', description: '', name: 'TESTSUITE_BRANCH')
@@ -38,7 +36,7 @@ pipeline {
         }
       }
     }
-  
+
     stage ('run'){
       steps {
         container('docker-runner') {
@@ -59,14 +57,29 @@ pipeline {
               variables.add("-e IAM_USER_PASSWORD=${IAM_USER_PASSWORD}")
               envvars = variables.join(' ')
               echo "env-vars: ${envvars}"
-              
-              sh "docker run --name ${name} ${envvars} ${image}"
-              sh "docker logs ${name}>storm-testsuite.log"
-              sh "docker cp ${name}:/home/tester/storm-testsuite/reports ."
-              archive 'storm-testsuite.log'
-              archive 'reports'
+
+              sh returnStatus: true, script: "docker run --name ${name} ${envvars} ${image}"
             }
           }
+        }
+      }
+    }
+
+    stage('report'){
+      steps {
+        container('docker-runner'){
+          sh "docker cp ${name}:/home/tester/storm-testsuite/reports ."
+          archive 'reports/**'
+
+          step([$class: 'RobotPublisher',
+            disableArchiveOutput: false,
+            logFileName: 'log.html',
+            otherFiles: '*.png',
+            outputFileName: 'output.xml',
+            outputPath: "reports",
+            passThreshold: 100,
+            reportFileName: 'report.html',
+            unstableThreshold: 90])
         }
       }
     }
