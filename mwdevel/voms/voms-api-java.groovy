@@ -1,5 +1,3 @@
-#!/usr/bin/env groovy
-
 pipeline {
   agent { label 'maven' }
 
@@ -15,23 +13,15 @@ pipeline {
       steps {
         container('maven-runner'){
           git branch: 'master', url: 'https://github.com/italiangrid/voms-api-java.git'
-          sh 'sed -i \'s#http:\\/\\/radiohead\\.cnaf\\.infn\\.it:8081\\/nexus\\/content\\/repositories#https:\\/\\/repo\\.cloud\\.ba\\.infn\\.it\\/repository#g\' pom.xml'
+          sh 'sed -i \'s#http:\\/\\/radiohead\\.cnaf\\.infn\\.it:8081\\/nexus\\/content\\/repositories#https:\\/\\/repo\\.cloud\\.cnaf\\.infn\\.it\\/repository#g\' pom.xml'
         }
       }
     }
 
-    stage('deploy'){ 
+    stage('deploy'){
       steps {
-        container('maven-runner'){
-          sh "mvn clean -U -B deploy" 
-        } 
-      }
-    }
-
-    stage('result'){
-      steps {
-        script {
-          currentBuild.result = 'SUCCESS'
+        container('maven-runner'){ 
+          sh "mvn clean -U -B deploy"  
         }
       }
     }
@@ -46,7 +36,7 @@ pipeline {
     }
     changed {
       script{
-        if('SUCCESS'.equals(currentBuild.result)) {
+        if('SUCCESS'.equals(currentBuild.currentResult)) {
           slackSend color: 'good', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Back to normal (<${env.BUILD_URL}|Open>)"
         }
       }
