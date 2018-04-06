@@ -16,12 +16,13 @@ pipeline {
   }
 
   parameters {
-    string(name: 'PKG_TAG', defaultValue: 'v1.2.0', description: 'The branch of the pkg.argus repo' )
+    string(name: 'PKG_TAG', defaultValue: 'v1.3.0', description: 'The branch of the pkg.argus repo' )
   }
 
   environment {
     JOB_NAME = 'indigo-iam/pkg.indigo-iam'
     INCLUDE_BUILD_NUMBER='1'
+    NEXUS_URL="http://nexus.default.svc.cluster.local" 
   }
 
   stages {
@@ -99,22 +100,20 @@ pipeline {
       }
     }
 
-    stage('archive'){
+    stage('push to Nexus'){
       agent { label 'generic' }
       steps {
-	deleteDir()
+      	container('generic-runner'){
+		  deleteDir()
+		  unstash 'rpm'
+		  unstash 'deb'
 
-        unstash 'rpm'
-        unstash 'deb'
-
-        archive '**'
-      }
-    }
-
-    stage('result'){
-      steps {
-        script {
-      	  currentBuild.result = 'SUCCESS'
+          withCredentials([
+            usernamePassword(credentialsId: 'jenkins-nexus', passwordVariable: 'password', usernameVariable: 'username')
+          ]) {
+            sh "nexus-assets-remove -u ${username} -p ${password} -H ${env.NEXUS_URL} -r indigo-iam -q nightly/"
+            sh "nexus-assets-upload -u ${username} -p ${password} -H ${env.NEXUS_URL} -r indigo-iam/nightly -d ."
+          }
         }
       }
     }
@@ -127,7 +126,7 @@ pipeline {
 
     changed {
       script{
-        if('SUCCESS'.equals(currentBuild.result)) {
+        if('SUCCESS'.equals(currentBuild.currentResult)) {
           slackSend color: 'good', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Back to normal (<${env.BUILD_URL}|Open>)"
         }
       }
