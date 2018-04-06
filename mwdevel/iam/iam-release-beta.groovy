@@ -1,6 +1,6 @@
 #!/usr/bin/env groovy
 
-def pkg_job, approver
+def pkg_job
 
 pipeline {
   agent none
@@ -33,12 +33,7 @@ pipeline {
 
     stage('Promote to beta'){
       steps {
-        slackSend color: 'warning', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Requires approval to the next stage (<${env.BUILD_URL}|Open>)"
         script {
-          timeout(time: 60, unit: 'MINUTES'){
-            approver = input(message: 'Promote Packages to BETA release?', submitterParameter: 'approver')
-          }
-
           build job: 'promote-packages',
           parameters: [
             string(name: 'PRODUCT', value: 'indigo-iam'),
@@ -52,12 +47,7 @@ pipeline {
 
     stage('Publish to Nexus'){
       steps{
-        slackSend color: 'warning', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Requires approval to the next stage (<${env.BUILD_URL}|Open>)"
         script {
-          timeout(time: 60, unit: 'MINUTES'){
-            approver = input(message: 'Push packages to Nexus repo?', submitterParameter: 'approver')
-          }
-
           build job: 'nexus-publisher',
           parameters: [
             string(name: 'PRODUCT', value: 'indigo-iam'),
@@ -77,4 +67,3 @@ pipeline {
     }
   }
 }
-

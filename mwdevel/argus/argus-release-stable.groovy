@@ -7,8 +7,6 @@ properties([
   ]),
 ])
 
-
-def approver
 def title = 'Argus Authorization Service'
 def target = 'stable'
 
@@ -32,12 +30,6 @@ try {
   }
 
   stage("Publish on GitHub"){
-    slackSend color: 'warning', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Requires approval to the next stage (<${env.BUILD_URL}|Open>)"
-
-    timeout(time: 60, unit: 'MINUTES'){
-      approver = input(message: 'Push packages to GitHub repo?', submitterParameter: 'approver')
-    }
-
     node('generic'){
       def github_repo_url = "https://${params.GITHUB_REPO}"
       def github_repo_branch = "gh-pages"
