@@ -41,7 +41,6 @@ pipeline {
             sh './push-image.sh' 
           }
         }
-        script { currentBuild.result = 'SUCCESS' }
       }
     }
   }
@@ -53,7 +52,7 @@ pipeline {
 
     changed {
       script{
-        if('SUCCESS'.equals(currentBuild.result)) {
+        if('SUCCESS'.equals(currentBuild.currentResult)) {
           slackSend color: 'good', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Back to normal (<${env.BUILD_URL}|Open>)"
         }
       }

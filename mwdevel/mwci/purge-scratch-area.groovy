@@ -11,7 +11,7 @@ pipeline {
   triggers { cron('@daily') }
 
   parameters {
-    string(name: 'DAYS', defaultValue: '15', description: '' )
+    string(name: 'DAYS', defaultValue: '7', description: '' )
   }
 
   stages {
@@ -20,7 +20,6 @@ pipeline {
         container('kubectl-runner'){
           sh "find /srv/scratch/ -maxdepth 1 -type d -ctime +${params.DAYS} -print -exec rm -rf {} \\;"
         }
-        script { currentBuild.result = 'SUCCESS' }
       }
     }
   }
@@ -32,7 +31,7 @@ pipeline {
 
     changed {
       script{
-        if('SUCCESS'.equals(currentBuild.result)) {
+        if('SUCCESS'.equals(currentBuild.currentResult)) {
           slackSend color: 'good', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Back to normal (<${env.BUILD_URL}|Open>)"
         }
       }

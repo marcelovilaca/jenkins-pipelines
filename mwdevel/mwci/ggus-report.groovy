@@ -19,10 +19,11 @@ pipeline {
   stages {
     stage('prepare'){
       steps {
-        sh "mkdir -p ${env.REPORT_DIR}"
+      	container('kubectl-runner'){
+          sh "mkdir -p ${env.REPORT_DIR}"
 
-        script {
-          def pod_template = """
+          script {
+            def pod_template = """
 apiVersion: v1
 kind: Pod
 metadata:
@@ -48,7 +49,8 @@ spec:
     - name: TZ
       value: Europe/Rome
 """
-          writeFile file: "${env.POD_FILE}", text: "${pod_template}"
+            writeFile file: "${env.POD_FILE}", text: "${pod_template}"
+          }
         }
       }
     }
@@ -74,10 +76,12 @@ spec:
 
     stage('archive'){
       steps {
-        script {
-          dir("${env.REPORT_DIR}"){ archiveArtifacts "**" }
-
-          currentBuild.result = 'SUCCESS'
+      	container('kubectl-runner'){
+          script {
+            dir("${env.REPORT_DIR}"){ 
+          	  archiveArtifacts "**" 
+            }
+          }
         }
       }
     }
@@ -90,7 +94,7 @@ spec:
 
     changed {
       script{
-        if('SUCCESS'.equals(currentBuild.result)) {
+        if('SUCCESS'.equals(currentBuild.currentResult)) {
           slackSend color: 'good', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Back to normal (<${env.BUILD_URL}|Open>)"
         }
       }
