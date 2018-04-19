@@ -109,13 +109,14 @@ spec:
       }
     }
 
-    stage('archive'){
+    stage('archive & clean'){
       agent { label 'generic' }
       steps {
         dir("${env.OUTPUT_DIR}"){
           archiveArtifacts 'tls-ca-bundle.pem'
           archiveArtifacts '*.yaml' 
         }
+        sh "rm -rfv ${env.OUTPUT_DIR}"
       }
     }
   }
