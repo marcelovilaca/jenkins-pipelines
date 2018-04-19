@@ -74,14 +74,13 @@ spec:
 	  }
 	}
 
-    stage('archive'){
+    stage('archive & clean'){
       steps {
       	container('kubectl-runner'){
-          script {
-            dir("${env.REPORT_DIR}"){ 
-          	  archiveArtifacts "**" 
-            }
-          }
+	      dir("${env.REPORT_DIR}"){ 
+	        archiveArtifacts "**" 
+	      }
+	      sh "rm -rfv ${env.REPORT_DIR}"
         }
       }
     }

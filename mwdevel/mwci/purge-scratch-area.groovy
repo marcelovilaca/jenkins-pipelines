@@ -8,17 +8,19 @@ pipeline {
     buildDiscarder(logRotator(numToKeepStr: '5'))
   }
 
-  triggers { cron('@daily') }
+  triggers { 
+  	cron('@daily') 
+  }
 
   parameters {
     string(name: 'DAYS', defaultValue: '7', description: '' )
   }
 
   stages {
-    stage('clean'){
+    stage('run'){
       steps {
         container('kubectl-runner'){
-          sh "find /srv/scratch/ -maxdepth 1 -type d -ctime +${params.DAYS} -print -exec rm -rf {} \\;"
+          sh "find /srv/scratch/ -maxdepth 1 -type d -mtime +${params.DAYS} -print -exec rm -rf {} \\;"
         }
       }
     }
