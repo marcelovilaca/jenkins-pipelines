@@ -80,7 +80,7 @@ spec:
 	      dir("${env.REPORT_DIR}"){ 
 	        archiveArtifacts "**" 
 	      }
-	      sh "rm -rfv ${env.REPORT_DIR}"
+	      sh "rm -rfv /srv/scratch/${env.BUILD_TAG}"
         }
       }
     }
