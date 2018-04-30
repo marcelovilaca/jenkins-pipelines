@@ -77,7 +77,8 @@ spec:
     stage('archive & clean'){
       steps {
       	container('kubectl-runner'){
-	      dir("${env.REPORT_DIR}"){ 
+      	  sh "cp -rv ${env.REPORT_DIR} ."
+	      dir("reports"){ 
 	        archiveArtifacts "**" 
 	      }
 	      sh "rm -rfv /srv/scratch/${env.BUILD_TAG}"
