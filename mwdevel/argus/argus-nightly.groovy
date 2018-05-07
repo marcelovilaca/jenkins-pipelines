@@ -3,7 +3,7 @@
 def build_number, pkg_el6, pkg_el7, job_to_build
 
 pipeline {
-  agent none
+  agent { label 'generic' }
 	
   triggers {
     cron('@midnight')
@@ -22,11 +22,11 @@ pipeline {
     COMPONENT_LIST='pap pdp-pep-common pep-common pdp pep-server pep-api-c pep-api-java pepcli gsi-pep-callout metapackage'
     INCLUDE_BUILD_NUMBER='1'
     USE_DOCKER_REGISTRY='1'
+    NEXUS_URL="http://nexus.default.svc.cluster.local" 
   }
 	
   stages {
     stage('prepare'){
-      agent { label 'generic' }
       steps {
         script{
           def branch = java.net.URLEncoder.encode("${params.PKG_TAG}", "UTF-8")
@@ -64,7 +64,6 @@ pipeline {
     }
 
     stage('archive'){
-      agent { label 'generic' }
       steps {
         container('generic-runner'){
           script {
@@ -81,18 +80,32 @@ pipeline {
             ])
 
             dir('repo') {
-              sh "mkdir -p {el6,el7}/RPMS"
-              sh "mv centos6/* el6/RPMS/"
-              sh "createrepo el6/RPMS/"
-              sh "repoview el6/RPMS/"
+              sh "mkdir -p {el6,el7}"
+              sh "mv centos6/* el6/"
+              sh "repoview el6/"
            
-              sh "mv centos7/* el7/RPMS/"
-              sh "createrepo el7/RPMS/"
-              sh "repoview el7/RPMS/"
+              sh "mv centos7/* el7/"
+              sh "repoview el7/"
               sh "rm -rfv centos6/ centos7/"
            
-              archiveArtifacts '**'
+              stash includes: '**', name: 'rpms'
             }
+          }
+        }
+      }
+    }
+    
+    stage('push to Nexus'){
+      steps {
+      	container('generic-runner'){
+      	  deleteDir()
+		  unstash 'rpms'
+
+          withCredentials([
+            usernamePassword(credentialsId: 'jenkins-nexus', passwordVariable: 'password', usernameVariable: 'username')
+          ]) {
+            sh "nexus-assets-remove -u ${username} -p ${password} -H ${env.NEXUS_URL} -r argus -q nightly/"
+            sh "nexus-assets-upload -u ${username} -p ${password} -H ${env.NEXUS_URL} -r argus/nightly -d ."
           }
         }
       }
