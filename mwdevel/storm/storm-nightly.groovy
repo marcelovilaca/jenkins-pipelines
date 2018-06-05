@@ -22,7 +22,7 @@ pipeline {
   environment {
     JOB_NAME = 'pkg.storm'
     INCLUDE_BUILD_NUMBER='1'
-    NEXUS_URL="http://nexus.default.svc.cluster.local" 
+    NEXUS_URL="http://nexus.default.svc.cluster.local"
   }
 
   stages {
@@ -78,6 +78,27 @@ pipeline {
         }
       }
     }
+
+    stage('create-repo-file') {
+      agent { label 'generic' }
+      steps {
+      	container('generic-runner') {
+    	  script {
+            def repoStr = """[storm-test-centos6]
+name=storm-nightly-centos6
+baseurl=https://repo.cloud.cnaf.infn.it/repository/storm/nightly/el6/x86_64/
+protect=1
+enabled=1
+priority=1
+gpgcheck=0
+"""
+            writeFile file: "storm-nightly-centos6.repo", text: "${repoStr}"
+          }
+          archiveArtifacts "*.repo"
+        }
+      }
+    }
+
   }
 
   post {
