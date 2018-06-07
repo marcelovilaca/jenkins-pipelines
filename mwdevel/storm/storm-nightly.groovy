@@ -62,29 +62,12 @@ pipeline {
       }
     }
 
-    stage('push to Nexus'){
-      agent { label 'generic' }
-      steps {
-      	container('generic-runner'){
-		  deleteDir()
-		  unstash 'rpm'
-
-          withCredentials([
-            usernamePassword(credentialsId: 'jenkins-nexus', passwordVariable: 'password', usernameVariable: 'username')
-          ]) {
-            sh "nexus-assets-remove -u ${username} -p ${password} -H ${env.NEXUS_URL} -r storm -q nightly/"
-            sh "nexus-assets-upload -u ${username} -p ${password} -H ${env.NEXUS_URL} -r storm/nightly -d ."
-          }
-        }
-      }
-    }
-
-    stage('create-repo-file') {
+	stage('create-repo-file') {
       agent { label 'generic' }
       steps {
       	container('generic-runner') {
     	  script {
-            def repoStr = """[storm-test-centos6]
+            def repoStr = """[storm-nightly-centos6]
 name=storm-nightly-centos6
 baseurl=https://repo.cloud.cnaf.infn.it/repository/storm/nightly/el6/x86_64/
 protect=1
@@ -94,7 +77,25 @@ gpgcheck=0
 """
             writeFile file: "storm-nightly-centos6.repo", text: "${repoStr}"
           }
-          archiveArtifacts "*.repo"
+          stash includes: '*.repo', name: 'repo'
+        }
+      }
+    }
+
+    stage('push to Nexus'){
+      agent { label 'generic' }
+      steps {
+      	container('generic-runner'){
+		  deleteDir()
+		  unstash 'rpm'
+		  unstash 'repo'
+
+          withCredentials([
+            usernamePassword(credentialsId: 'jenkins-nexus', passwordVariable: 'password', usernameVariable: 'username')
+          ]) {
+            sh "nexus-assets-remove -u ${username} -p ${password} -H ${env.NEXUS_URL} -r storm -q nightly/"
+            sh "nexus-assets-upload -u ${username} -p ${password} -H ${env.NEXUS_URL} -r storm/nightly -d ."
+          }
         }
       }
     }
