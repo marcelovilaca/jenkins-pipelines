@@ -16,7 +16,7 @@ pipeline {
   }
 
   parameters {
-    string(name: 'PKG_TAG', defaultValue: 'develop', description: 'The branch of the pkg.storm repo' )
+    string(name: 'PKG_TAG', defaultValue: 'release_1_11_14', description: 'The branch of the pkg.storm repo' )
   }
 
   environment {
