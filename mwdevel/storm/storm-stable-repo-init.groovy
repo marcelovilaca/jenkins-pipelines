@@ -70,10 +70,8 @@ mv cdmi-storm*.rpm el7/x86_64
 """
           sh "createrepo el6/x86_64/"
           sh "repoview el6/x86_64/"
-          sh "rm -rf el6/x86_64/repodata"
           sh "createrepo el7/x86_64/"
           sh "repoview el7/x86_64/"
-          sh "rm -rf el7/x86_64/repodata"
           stash includes: 'el6/', name: 'rpm6'
           stash includes: 'el7/', name: 'rpm7'
         }
