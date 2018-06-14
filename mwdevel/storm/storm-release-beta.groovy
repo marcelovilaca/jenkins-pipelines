@@ -52,7 +52,6 @@ pipeline {
               sh "mv centos6/*.rpm el6/x86_64/"
               sh "createrepo el6/x86_64/"
               sh "repoview el6/x86_64/"
-              sh "rm -rf el6/x86_64/repodata"
               stash includes: 'el6/', name: 'rpm'
             }
           }
