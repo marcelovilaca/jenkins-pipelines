@@ -113,7 +113,8 @@ gpgcheck=0
     stage('push to Nexus'){
       agent { label 'generic' }
       steps {
-        container('generic-runner'){
+        container('generic-runner') {
+          deleteDir()
           unstash 'rpm6'
           unstash 'rpm7'
           unstash 'repo6'
