@@ -10,8 +10,6 @@ pipeline {
     buildDiscarder(logRotator(numToKeepStr: '5'))
   }
 
-  triggers { cron('@daily') }
-
   environment { DOCKER_REGISTRY_HOST = "${env.DOCKER_REGISTRY_HOST}" }
 
   parameters {
@@ -20,6 +18,7 @@ pipeline {
     string(defaultValue: "omii003-vm01.cnaf.infn.it:8888", description: '', name: 'CDMI_ENDPOINT')
     string(defaultValue: "to-be-fixed", description: '', name: 'TESTSUITE_EXCLUDE')
     string(defaultValue: "tests", description: '', name: 'TESTSUITE_SUITE')
+    string(defaultValue: "/storage", description: '', name: 'STORM_STORAGE_ROOT_DIR')
   }
 
   stages {
@@ -55,6 +54,7 @@ pipeline {
               variables.add("-e CDMI_CLIENT_SECRET=${CDMI_CLIENT_SECRET}")
               variables.add("-e IAM_USER_NAME=${IAM_USER_NAME}")
               variables.add("-e IAM_USER_PASSWORD=${IAM_USER_PASSWORD}")
+              variables.add("-e STORM_STORAGE_ROOT_DIR=${params.STORM_STORAGE_ROOT_DIR}")
               envvars = variables.join(' ')
               echo "env-vars: ${envvars}"
 
