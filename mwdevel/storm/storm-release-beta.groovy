@@ -10,10 +10,6 @@ pipeline {
     buildDiscarder(logRotator(numToKeepStr: '5'))
   }
 
-  triggers {
-    cron('@midnight')
-  }
-
   parameters {
     string(name: 'PKG_TAG', defaultValue: 'release_1_11_14', description: 'The branch of the pkg.storm repo' )
   }
