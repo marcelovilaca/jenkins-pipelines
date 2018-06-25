@@ -1,6 +1,5 @@
 #!/usr/bin/env groovy
 
-def pkg_build_number = 'nightly'
 def pkg_el7, pkg_deb
 
 pipeline {
@@ -16,10 +15,11 @@ pipeline {
   }
 
   parameters {
-    string(name: 'PKG_TAG', defaultValue: 'v1.3.0', description: 'The branch of the pkg.argus repo' )
+    string(name: 'PKG_TAG', defaultValue: 'develop', description: 'The branch of the pkg.argus repo' )
   }
 
   environment {
+  	BUILD_NUMBER = 'nightly'
     JOB_NAME = 'indigo-iam/pkg.indigo-iam'
     INCLUDE_BUILD_NUMBER='1'
     NEXUS_URL="http://nexus.default.svc.cluster.local" 
@@ -30,7 +30,7 @@ pipeline {
       steps{
         script{
           pkg_el7 = build job: "${env.JOB_NAME}/${params.PKG_TAG}", parameters: [
-            string(name: 'PKG_BUILD_NUMBER', value: "${pkg_build_number}"),
+            string(name: 'PKG_BUILD_NUMBER', value: "${env.BUILD_NUMBER}"),
             string(name: 'INCLUDE_BUILD_NUMBER', value: "${env.INCLUDE_BUILD_NUMBER}"),
             string(name: 'PLATFORM', value: "centos7")
           ]
@@ -42,7 +42,7 @@ pipeline {
       steps {
         script {
           pkg_deb = build job: "${env.JOB_NAME}/${params.PKG_TAG}", parameters: [
-            string(name: 'PKG_BUILD_NUMBER', value: "${pkg_build_number}"),
+            string(name: 'PKG_BUILD_NUMBER', value: "${env.BUILD_NUMBER}"),
             string(name: 'INCLUDE_BUILD_NUMBER', value: "${env.INCLUDE_BUILD_NUMBER}"),
             string(name: 'PLATFORM', value: "ubuntu1604")
 		  ]
