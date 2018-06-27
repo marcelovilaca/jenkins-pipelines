@@ -1,7 +1,7 @@
 #!/usr/bin/env groovy
 
 pipeline {
-  agent none
+  agent { label 'kubectl' }
 
   options {
     timeout(time: 2, unit: 'HOURS')
@@ -36,7 +36,6 @@ pipeline {
     }
 
     stage('prepare'){
-      agent { label 'kubectl' }
       steps {
         container('kubectl-runner'){
           sh "mkdir -p ${env.OUTPUT_DIR}"
@@ -68,17 +67,18 @@ spec:
     - name: TZ
       value: Europe/Rome
 """
-            writeFile file: "${env.OUTPUT_DIR}/${env.POD_FILE}", text: "${pod_template}"
+            writeFile file: "${env.POD_FILE}", text: "${pod_template}"
+            stash name: 'podfile', includes: "${env.POD_FILE}"
           }
         }
       }
     }
 
     stage('run'){
-      agent { label 'kubectl' }
       steps {
         container('kubectl-runner'){
-          sh "kubectl apply -f ${env.OUTPUT_DIR}/${env.POD_FILE}"
+          unstash 'podfile'
+          sh "kubectl apply -f ${env.POD_FILE}"
           sh "while ( [ 'Running' != `kubectl get pod ${env.POD_NAME} -o jsonpath='{.status.phase}'` ] ); do echo 'Waiting pod...'; sleep 1; done"
 
           sh "kubectl logs -f ${env.POD_NAME}"
@@ -88,14 +88,13 @@ spec:
       post { 
         always { 
           container('kubectl-runner'){
-            sh "kubectl delete -f ${env.OUTPUT_DIR}/${env.POD_FILE}"
+            sh "kubectl delete -f ${env.POD_FILE}"
           }
         } 
       }
     }
 
     stage('update secret'){
-      agent { label 'kubectl' }
       steps {
         container('kubectl-runner'){
           sh """
@@ -110,13 +109,16 @@ spec:
     }
 
     stage('archive & clean'){
-      agent { label 'generic' }
       steps {
-        dir("${env.OUTPUT_DIR}"){
-          archiveArtifacts 'tls-ca-bundle.pem'
-          archiveArtifacts '*.yaml' 
+        container('kubectl-runner'){
+          archiveArtifacts "${env.POD_FILE}"
+          sh "cp -rv ${env.OUTPUT_DIR} outputs"
+          dir("outputs"){
+            archiveArtifacts 'tls-ca-bundle.pem'
+            archiveArtifacts '*.yaml' 
+          }
+          sh "rm -rfv ${env.OUTPUT_DIR}"
         }
-        sh "rm -rfv ${env.OUTPUT_DIR}"
       }
     }
   }
