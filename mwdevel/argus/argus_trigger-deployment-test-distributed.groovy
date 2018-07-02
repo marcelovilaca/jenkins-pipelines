@@ -30,6 +30,10 @@ pipeline {
             string(name: 'REPO', value: "${params.REPO}"),
             string(name: 'GH_REPO', value: "${params.GH_REPO}"),
           ]
+          
+          if("FAILURE".equals(test_el6.result)) {
+            currentBuild.result = 'UNSTABLE'
+          }
         }
       }
     }
@@ -46,6 +50,10 @@ pipeline {
             string(name: 'REPO', value: "${params.REPO}"),
             string(name: 'GH_REPO', value: "${params.GH_REPO}"),
           ]
+          
+          if("FAILURE".equals(test_el6.result)) {
+            currentBuild.result = 'UNSTABLE'
+          }
         }
       }
     }
