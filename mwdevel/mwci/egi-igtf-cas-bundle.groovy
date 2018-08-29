@@ -83,8 +83,11 @@ spec:
           sh "echo ${env.POD_NAME} > /tmp/da_pod_name"
           sh '''
           pod_status=$(kubectl get pod $(cat /tmp/da_pod_name) -o jsonpath='{.status.phase}')
-          while [[ 'Succeeded' != ${pod_status} ]] || [[ 'Failed' != ${pod_status} ]]; do
-            echo 'Waiting pod...'; sleep 1; 
+          while true; do
+            if [[ "${pod_status}" =~ ^(Succeeded|Failed)$ ]]; then
+              break;
+            fi
+            echo 'Waiting pod...'; sleep 1;
           done'''
           sh "kubectl logs -f ${env.POD_NAME}"
         }
