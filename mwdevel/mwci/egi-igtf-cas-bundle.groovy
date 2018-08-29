@@ -79,7 +79,7 @@ spec:
         container('kubectl-runner'){
           unstash 'podfile'
           sh "kubectl apply -f ${env.POD_FILE}"
-          sh "while ( [ 'Running' != `kubectl get pod ${env.POD_NAME} -o jsonpath='{.status.phase}'` ] ); do echo 'Waiting pod...'; sleep 1; done"
+          sh "pod_status=$(kubectl get pod ${env.POD_NAME} -o jsonpath='{.status.phase}); while ( [ 'Succeeded' != $pod_status || 'Failed' != $pod_status ] ); do echo 'Waiting pod...'; sleep 1; done"
 
           sh "kubectl logs -f ${env.POD_NAME}"
         }
