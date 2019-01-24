@@ -1,6 +1,7 @@
 #!/usr/bin/env groovy
 
 def pkg_el6
+def pkg_el7
 
 pipeline {
   agent none
@@ -11,34 +12,40 @@ pipeline {
   }
 
   parameters {
-    string(name: 'PKG_TAG', defaultValue: 'release_1_11_14', description: 'The branch of the pkg.storm repo' )
+    string(name: 'PKG_TAG_EL6', defaultValue: 'release-el6-1-11-15', description: 'The branch of the EL6 pkg.storm repo')
+    string(name: 'PKG_TAG_EL7', defaultValue: 'release-el7-1-11-15', description: 'The branch of the EL7 pkg.storm repo')
+    booleanParam(name: 'REBUILD_PKG_EL6', defaultValue: true, description: 'Rebuild the branch of the EL6 pkg.storm repo before copying artifacts')
+    booleanParam(name: 'REBUILD_PKG_EL7', defaultValue: true, description: 'Rebuild the branch of the EL7 pkg.storm repo before copying artifacts')
   }
 
   environment {
     JOB_NAME = 'pkg.storm'
-    INCLUDE_BUILD_NUMBER='1'
     NEXUS_URL="http://nexus.default.svc.cluster.local"
   }
 
   stages {
-    stage('create RPM'){
-      steps{
-        script{
-          pkg_el6 = build job: "${env.JOB_NAME}/${params.PKG_TAG}", parameters: [
-            string(name: 'INCLUDE_BUILD_NUMBER', value: "0"),
-            string(name: 'PLATFORM', value: "centos6")
+    stage('create EL6 RPMs') {
+      when {
+        expression {
+          return params.REBUILD_PKG_EL6;
+        }
+      }
+      steps {
+        script {
+          pkg_el6 = build job: "${env.JOB_NAME}/${params.PKG_TAG_EL6}", parameters: [
+            string(name: 'INCLUDE_BUILD_NUMBER', value: "0")
           ]
         }
       }
     }
 
-    stage('prepare RPM repo'){
+    stage('prepare EL6 RPM repo') {
       agent { label 'generic' }
       steps {
-        container('generic-runner'){
+        container('generic-runner') {
           script {
             step ([$class: 'CopyArtifact',
-              projectName: "${env.JOB_NAME}/${params.PKG_TAG}",
+              projectName: "${env.JOB_NAME}/${params.PKG_TAG_EL6}",
               filter: 'rpms/centos6/**',
               selector: [$class: 'SpecificBuildSelector', buildNumber: "${pkg_el6.number}"]
             ])
@@ -48,14 +55,14 @@ pipeline {
               sh "mv centos6/*.rpm el6/x86_64/"
               sh "createrepo el6/x86_64/"
               sh "repoview el6/x86_64/"
-              stash includes: 'el6/', name: 'rpm'
+              stash includes: 'el6/', name: 'rpm6'
             }
           }
         }
       }
     }
 
-  stage('create-repo-file') {
+    stage('create EL6 repo file') {
       agent { label 'generic' }
       steps {
         container('generic-runner') {
@@ -70,18 +77,78 @@ gpgcheck=0
 """
             writeFile file: "storm-beta-centos6.repo", text: "${repoStr}"
           }
-          stash includes: '*.repo', name: 'repo'
+          stash includes: '*.repo', name: 'repo6'
         }
       }
     }
 
-    stage('push to Nexus'){
+    stage('create EL7 RPMs') {
+      when {
+        expression {
+          return params.REBUILD_PKG_EL7;
+        }
+      }
+      steps {
+        script {
+          pkg_el7 = build job: "${env.JOB_NAME}/${params.PKG_TAG_EL7}", parameters: [
+            string(name: 'INCLUDE_BUILD_NUMBER', value: "0")
+          ]
+        }
+      }
+    }
+
+    stage('prepare EL7 RPM repo') {
       agent { label 'generic' }
       steps {
-        container('generic-runner'){
-      deleteDir()
-      unstash 'rpm'
-      unstash 'repo'
+        container('generic-runner') {
+          script {
+            step ([$class: 'CopyArtifact',
+              projectName: "${env.JOB_NAME}/${params.PKG_TAG_EL7}",
+              filter: 'rpms/centos7/**',
+              selector: [$class: 'SpecificBuildSelector', buildNumber: "${pkg_el7.number}"]
+            ])
+
+            dir('rpms') {
+              sh "mkdir -p el7/x86_64"
+              sh "mv centos7/*.rpm el7/x86_64/"
+              sh "createrepo el7/x86_64/"
+              sh "repoview el7/x86_64/"
+              stash includes: 'el7/', name: 'rpm7'
+            }
+          }
+        }
+      }
+    }
+
+    stage('create EL7 repo file') {
+      agent { label 'generic' }
+      steps {
+        container('generic-runner') {
+        script {
+            def repoStr = """[storm-beta-centos7]
+name=storm-beta-centos7
+baseurl=https://repo.cloud.cnaf.infn.it/repository/storm/beta/el7/x86_64/
+protect=1
+enabled=1
+priority=1
+gpgcheck=0
+"""
+            writeFile file: "storm-beta-centos7.repo", text: "${repoStr}"
+          }
+          stash includes: '*.repo', name: 'repo7'
+        }
+      }
+    }
+
+    stage('push to Nexus') {
+      agent { label 'generic' }
+      steps {
+        container('generic-runner') {
+          deleteDir()
+          unstash 'rpm6'
+          unstash 'repo6'
+          unstash 'rpm7'
+          unstash 'repo7'
 
           withCredentials([
             usernamePassword(credentialsId: 'jenkins-nexus', passwordVariable: 'password', usernameVariable: 'username')
