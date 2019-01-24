@@ -33,7 +33,7 @@ pipeline {
       steps {
         script {
           pkg_el6 = build job: "${env.JOB_NAME}/${params.PKG_TAG_EL6}", parameters: [
-            string(name: 'INCLUDE_BUILD_NUMBER', value: "0")
+            string(name: 'INCLUDE_BUILD_NUMBER', value: "")
           ]
         }
       }
@@ -91,7 +91,7 @@ gpgcheck=0
       steps {
         script {
           pkg_el7 = build job: "${env.JOB_NAME}/${params.PKG_TAG_EL7}", parameters: [
-            string(name: 'INCLUDE_BUILD_NUMBER', value: "0")
+            string(name: 'INCLUDE_BUILD_NUMBER', value: "")
           ]
         }
       }
