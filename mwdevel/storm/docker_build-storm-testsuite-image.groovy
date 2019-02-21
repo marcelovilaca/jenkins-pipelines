@@ -17,6 +17,11 @@ pipeline {
     DIRECTORY = "docker/storm-testsuite"
   }
 
+  parameters {
+    booleanParam(defaultValue: false, description: '', name: 'PUSH_TO_REGISTRY')
+    booleanParam(defaultValue: true, description: '', name: 'PUSH_TO_DOCKERHUB')
+  }
+
   stages {
     stage('prepare'){
       steps {
@@ -30,18 +35,42 @@ pipeline {
     stage('build'){
       steps {
         container('docker-runner'){
-          dir("${env.DIRECTORY}"){ 
-            sh 'sh build-image.sh' 
+          dir("${env.DIRECTORY}"){
+            sh 'sh build-image.sh'
           }
         }
       }
     }
 
-    stage('push'){
+    stage('push-registry') {
+      when {
+        expression {
+          return params.PUSH_TO_REGISTRY
+        }
+      }
       steps {
-        container('docker-runner'){
-          dir("${env.DIRECTORY}"){ 
+        container('docker-runner') {
+          dir("${env.DIRECTORY}") {
             sh "sh push-image.sh"
+          }
+        }
+      }
+    }
+
+    stage('push-dockerhub') {
+      when {
+        expression {
+          return params.PUSH_TO_DOCKERHUB
+        }
+      }
+      steps {
+        container('docker-runner') {
+          script {
+            withDockerRegistry([ credentialsId: "dockerhub-enrico", url: "" ]) {
+              dir("${env.DIRECTORY}") {
+                sh "sh push-image-dockerhub.sh"
+              }
+            }
           }
         }
       }
