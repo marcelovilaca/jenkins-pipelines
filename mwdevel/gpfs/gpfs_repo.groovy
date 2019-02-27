@@ -21,10 +21,10 @@ pipeline {
 
 mkdir yum
 
-wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/gpfs.base-3.4.0-17.x86_64.rpm
-wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/gpfs.msg.en_US-3.4.0-17.noarch.rpm
-wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/gpfs.docs-3.4.0-17.noarch.rpm
-wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/gpfs.gpl-3.4.0-17.noarch.rpm
+wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/OLD/gpfs.base-3.4.0-17.x86_64.rpm
+wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/OLD/gpfs.msg.en_US-3.4.0-17.noarch.rpm
+wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/OLD/gpfs.docs-3.4.0-17.noarch.rpm
+wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/OLD/gpfs.gpl-3.4.0-17.noarch.rpm
 
 wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/gpfs.base-3.5.0-31.x86_64.rpm
 wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/gpfs.msg.en_US-3.5.0-31.noarch.rpm
