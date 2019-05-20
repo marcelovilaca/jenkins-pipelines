@@ -38,7 +38,7 @@ pipeline {
       steps {
         container('docker-runner') {
           script {
-            image = "${env.DOCKER_REGISTRY_HOST}/italiangrid/grinder:latest"
+            image = "italiangrid/grinder:latest"
             echo "image: ${image}"
             name = "${env.JOB_BASE_NAME}-${env.BUILD_NUMBER}"
             echo "name: ${name}"
@@ -65,7 +65,7 @@ pipeline {
         }
       }
     }
-  
+
     stage ('run'){
       steps {
         container('docker-runner') {
