@@ -39,7 +39,7 @@ spec:
       claimName: scratch-area-claim
   containers:
   - name: ggus-report-${env.BUILD_NUMBER}
-    image: ${env.DOCKER_REGISTRY_HOST}/italiangrid/ggus-mon:latest
+    image: italiangrid/ggus-mon:latest
     volumeMounts:
     - name: scratch-area
       mountPath: /srv/scratch
