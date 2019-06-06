@@ -17,9 +17,11 @@ pipeline {
   }
 
   parameters {
-    string(name: 'PKG_TAG_EL6', defaultValue: 'release-el6-1-11-15', description: 'The branch of the EL6 pkg.storm repo' )
-    string(name: 'PKG_TAG_EL7', defaultValue: 'release-el7-1-11-15', description: 'The branch of the EL7 pkg.storm repo' )
+    booleanParam(name: 'BUILD_PKG_EL6', defaultValue: true, description: 'Build EL6 packages')
+    string(name: 'PKG_TAG_EL6', defaultValue: 'release-el6-1-11-16', description: 'The branch of the EL6 pkg.storm repo' )
     booleanParam(name: 'REBUILD_PKG_EL6', defaultValue: true, description: 'Rebuild the branch of the EL6 pkg.storm repo before copying artifacts')
+    booleanParam(name: 'BUILD_PKG_EL7', defaultValue: false, description: 'Build EL7 packages')
+    string(name: 'PKG_TAG_EL7', defaultValue: '', description: 'The branch of the EL7 pkg.storm repo' )
     booleanParam(name: 'REBUILD_PKG_EL7', defaultValue: true, description: 'Rebuild the branch of the EL7 pkg.storm repo before copying artifacts')
   }
 
@@ -88,7 +90,7 @@ gpgcheck=0
     stage('create EL7 RPMs') {
       when {
         expression {
-          return params.REBUILD_PKG_EL7;
+          return params.BUILD_PKG_EL7 && params.REBUILD_PKG_EL7;
         }
       }
       steps {
@@ -100,6 +102,11 @@ gpgcheck=0
       }
     }
     stage('prepare EL7 RPM repo') {
+      when {
+        expression {
+          return params.BUILD_PKG_EL7;
+        }
+      }
       agent { label 'generic' }
       steps {
         container('generic-runner') {
@@ -122,6 +129,11 @@ gpgcheck=0
       }
     }
     stage('create-repo-file-el7') {
+      when {
+        expression {
+          return params.BUILD_PKG_EL7;
+        }
+      }
       agent { label 'generic' }
       steps {
         container('generic-runner') {
@@ -141,20 +153,48 @@ gpgcheck=0
       }
     }
 
-    stage('push to Nexus') {
+    stage('push EL6 to Nexus') {
+      when {
+        expression {
+          return params.BUILD_PKG_EL6;
+        }
+      }
       agent { label 'generic' }
       steps {
         container('generic-runner') {
           deleteDir()
           unstash 'rpm6'
           unstash 'repo6'
+
+          withCredentials([
+            usernamePassword(credentialsId: 'jenkins-nexus', passwordVariable: 'password', usernameVariable: 'username')
+          ]) {
+            sh "nexus-assets-remove -u ${username} -p ${password} -H ${env.NEXUS_URL} -r storm -q nightly/storm-nightly-centos6.repo"
+            sh "nexus-assets-remove -u ${username} -p ${password} -H ${env.NEXUS_URL} -r storm -q nightly/el6"
+            sh "nexus-assets-upload -u ${username} -p ${password} -H ${env.NEXUS_URL} -r storm/nightly -d ."
+          }
+        }
+      }
+    }
+
+    stage('push EL7 to Nexus') {
+      when {
+        expression {
+          return params.BUILD_PKG_EL7;
+        }
+      }
+      agent { label 'generic' }
+      steps {
+        container('generic-runner') {
+          deleteDir()
           unstash 'rpm7'
           unstash 'repo7'
 
           withCredentials([
             usernamePassword(credentialsId: 'jenkins-nexus', passwordVariable: 'password', usernameVariable: 'username')
           ]) {
-            sh "nexus-assets-remove -u ${username} -p ${password} -H ${env.NEXUS_URL} -r storm -q nightly/"
+            sh "nexus-assets-remove -u ${username} -p ${password} -H ${env.NEXUS_URL} -r storm -q nightly/storm-nightly-centos7.repo"
+            sh "nexus-assets-remove -u ${username} -p ${password} -H ${env.NEXUS_URL} -r storm -q nightly/el7"
             sh "nexus-assets-upload -u ${username} -p ${password} -H ${env.NEXUS_URL} -r storm/nightly -d ."
           }
         }
