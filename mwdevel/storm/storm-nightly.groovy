@@ -20,8 +20,8 @@ pipeline {
     booleanParam(name: 'BUILD_PKG_EL6', defaultValue: true, description: 'Build EL6 packages')
     string(name: 'PKG_TAG_EL6', defaultValue: 'release-el6-1-11-16', description: 'The branch of the EL6 pkg.storm repo' )
     booleanParam(name: 'REBUILD_PKG_EL6', defaultValue: true, description: 'Rebuild the branch of the EL6 pkg.storm repo before copying artifacts')
-    booleanParam(name: 'BUILD_PKG_EL7', defaultValue: false, description: 'Build EL7 packages')
-    string(name: 'PKG_TAG_EL7', defaultValue: '', description: 'The branch of the EL7 pkg.storm repo' )
+    booleanParam(name: 'BUILD_PKG_EL7', defaultValue: true, description: 'Build EL7 packages')
+    string(name: 'PKG_TAG_EL7', defaultValue: 'release-el7-1-11-16', description: 'The branch of the EL7 pkg.storm repo' )
     booleanParam(name: 'REBUILD_PKG_EL7', defaultValue: true, description: 'Rebuild the branch of the EL7 pkg.storm repo before copying artifacts')
   }
 
