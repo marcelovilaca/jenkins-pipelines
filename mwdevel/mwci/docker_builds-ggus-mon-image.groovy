@@ -1,7 +1,15 @@
 #!/usr/bin/env groovy
 
 pipeline {
-  agent { label 'docker' }
+
+  agent {
+      kubernetes {
+          label "${env.JOB_NAME}-${env.JOB_BASE_NAME}-${env.BUILD_NUMBER}"
+          cloud 'Kube mwdevel'
+          defaultContainer 'jnlp'
+          inheritFrom 'ci-template'
+      }
+  }
 
   options {
     timeout(time: 1, unit: 'HOURS')
@@ -17,7 +25,7 @@ pipeline {
   stages {
     stage('prepare'){
       steps {
-        container('docker-runner'){
+        container('runner'){
           deleteDir()
           git 'https://github.com/italiangrid/docker-scripts'
         }
@@ -26,7 +34,7 @@ pipeline {
 
     stage('build'){
       steps {
-        container('docker-runner'){
+        container('runner'){
           dir('ggus-mon-image'){ 
             sh './build-image.sh' 
           }
@@ -36,7 +44,7 @@ pipeline {
 
     stage('push'){
       steps {
-        container('docker-runner'){
+        container('runner'){
           dir('ggus-mon-image'){ 
             sh './push-image.sh' 
           }
