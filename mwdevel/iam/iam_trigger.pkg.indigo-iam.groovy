@@ -4,7 +4,14 @@ def pkg_build_number = ''
 def pkg_el7, pkg_deb
 
 pipeline {
-  agent none
+  agent {
+      kubernetes {
+          label "${env.JOB_BASE_NAME}-${env.BUILD_NUMBER}"
+          cloud 'Kube mwdevel'
+          defaultContainer 'jnlp'
+          inheritFrom 'ci-template'
+      }
+  }
 	
   options {
     timeout(time: 3, unit: 'HOURS')
@@ -17,13 +24,12 @@ pipeline {
   }
     
   environment {
-    JOB_NAME = 'indigo-iam/pkg.indigo-iam'
+    JOB_NAME = 'pkg.indigo-iam'
     IAM_ROOT = "/mnt/packages/repo/indigo-iam"
   }
     
   stages {
     stage('prepare'){
-    agent { label 'generic' }
       steps {
         script {
           if("${params.INCLUDE_BUILD_NUMBER}" == "1") {
@@ -58,9 +64,8 @@ pipeline {
     }
       
     stage('archive RPMs'){
-      agent { label 'generic' }
       steps {
-        container('generic-runner'){
+        container('runner'){
           script {
             step ([$class: 'CopyArtifact',
               projectName: "${env.JOB_NAME}/${params.PKG_TAG}",
@@ -108,7 +113,6 @@ pipeline {
     }
     
     stage('update symlink'){
-      agent { label 'generic' }
       steps {
         container('generic-runner'){
           sh "rm -vf ${env.IAM_ROOT}/nightly"

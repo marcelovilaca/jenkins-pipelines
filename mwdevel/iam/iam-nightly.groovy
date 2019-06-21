@@ -3,7 +3,14 @@
 def pkg_el7, pkg_deb
 
 pipeline {
-  agent none
+  agent {
+      kubernetes {
+          label "${env.JOB_BASE_NAME}-${env.BUILD_NUMBER}"
+          cloud 'Kube mwdevel'
+          defaultContainer 'jnlp'
+          inheritFrom 'ci-template'
+      }
+  }
 
   options {
     timeout(time: 3, unit: 'HOURS')
@@ -20,7 +27,7 @@ pipeline {
 
   environment {
   	BUILD_NUMBER = 'nightly'
-    JOB_NAME = 'indigo-iam/pkg.indigo-iam'
+    JOB_NAME = 'pkg.indigo-iam'
     INCLUDE_BUILD_NUMBER='1'
     NEXUS_URL="http://nexus.default.svc.cluster.local" 
   }
@@ -51,9 +58,8 @@ pipeline {
     }
 
     stage('prepare RPM repo'){
-      agent { label 'generic' }
       steps {
-        container('generic-runner'){
+        container('runner'){
           script {
             step ([$class: 'CopyArtifact',
               projectName: "${env.JOB_NAME}/${params.PKG_TAG}",
@@ -101,9 +107,8 @@ pipeline {
     }
 
     stage('push to Nexus'){
-      agent { label 'generic' }
       steps {
-      	container('generic-runner'){
+      	container('runner'){
 		  deleteDir()
 		  unstash 'rpm'
 		  unstash 'deb'
