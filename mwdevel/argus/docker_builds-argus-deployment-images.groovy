@@ -2,7 +2,7 @@
 
 def build_image(platform, deployment){
   node('docker'){
-    container('docker-runner'){
+    container('runner'){
       deleteDir()
       unstash "source"
 
