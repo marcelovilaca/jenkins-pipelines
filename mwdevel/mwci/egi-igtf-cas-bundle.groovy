@@ -1,7 +1,16 @@
 #!/usr/bin/env groovy
+@Library('sd') _
+def kubeLabel = getKubeLabel()
 
 pipeline {
-  agent { label 'kubectl' }
+  agent {
+      kubernetes {
+          label "${kubeLabel}"
+          cloud 'Kube mwdevel'
+          defaultContainer 'runner'
+          inheritFrom 'ci-template'
+      }
+  }
 
   options {
     timeout(time: 2, unit: 'HOURS')
@@ -23,23 +32,18 @@ pipeline {
 
   stages {
     stage('build image'){
-      agent { label 'docker' }
       steps{
-        container('docker-runner'){
-          git 'https://github.com/marcocaberletti/docker'
-          dir('egi-igtf-cas') {
-            sh "./build-image.sh"
-            sh "./push-image.sh"
-          }
+        git 'https://github.com/marcocaberletti/docker'
+        dir('egi-igtf-cas') {
+          sh "./build-image.sh"
+          sh "./push-image.sh"
         }
       }
     }
 
     stage('prepare'){
       steps {
-        container('kubectl-runner'){
           sh "mkdir -p ${env.OUTPUT_DIR}"
-
           script {
             def pod_template = """
 apiVersion: v1
@@ -70,13 +74,11 @@ spec:
             writeFile file: "${env.POD_FILE}", text: "${pod_template}"
             stash name: 'podfile', includes: "${env.POD_FILE}"
           }
-        }
       }
     }
 
     stage('run'){
       steps {
-        container('kubectl-runner'){
           unstash 'podfile'
           sh "kubectl apply -f ${env.POD_FILE}"
 
@@ -90,43 +92,36 @@ spec:
             echo 'Waiting pod...'; sleep 1;
           done'''
           sh "kubectl logs -f ${env.POD_NAME}"
-        }
       }
 
       post { 
         always { 
-          container('kubectl-runner'){
             sh "kubectl delete -f ${env.POD_FILE}"
-          }
         } 
       }
     }
 
     stage('update secret'){
       steps {
-        container('kubectl-runner'){
-          sh """
-          kubectl create secret generic ${params.SECRET_NAME} \\
-            --namespace=default --from-file=ca.crt=${env.OUTPUT_DIR}/tls-ca-bundle.pem \\
-            --dry-run -o yaml > ${env.OUTPUT_DIR}/${params.SECRET_NAME}.secret.yaml
-          kubectl --namespace=default delete -f ${env.OUTPUT_DIR}/${params.SECRET_NAME}.secret.yaml --ignore-not-found=true
-          kubectl --namespace=default create -f ${env.OUTPUT_DIR}/${params.SECRET_NAME}.secret.yaml
-          """
-        }
+        sh """
+        kubectl create secret generic ${params.SECRET_NAME} \\
+          --namespace=default --from-file=ca.crt=${env.OUTPUT_DIR}/tls-ca-bundle.pem \\
+          --dry-run -o yaml > ${env.OUTPUT_DIR}/${params.SECRET_NAME}.secret.yaml
+        kubectl --namespace=default delete -f ${env.OUTPUT_DIR}/${params.SECRET_NAME}.secret.yaml --ignore-not-found=true
+        kubectl --namespace=default create -f ${env.OUTPUT_DIR}/${params.SECRET_NAME}.secret.yaml
+        """
       }
     }
 
     stage('archive & clean'){
       steps {
-        container('kubectl-runner'){
-          archiveArtifacts "${env.POD_FILE}"
-          sh "cp -rv ${env.OUTPUT_DIR} outputs"
-          dir("outputs"){
-            archiveArtifacts 'tls-ca-bundle.pem'
-            archiveArtifacts '*.yaml' 
-          }
-          sh "rm -rfv ${env.OUTPUT_DIR}"
+        archiveArtifacts "${env.POD_FILE}"
+        sh "cp -rv ${env.OUTPUT_DIR} outputs"
+        dir("outputs"){
+          archiveArtifacts 'tls-ca-bundle.pem'
+          archiveArtifacts '*.yaml' 
         }
+        sh "rm -rfv ${env.OUTPUT_DIR}"
       }
     }
   }
