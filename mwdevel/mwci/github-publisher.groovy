@@ -1,7 +1,17 @@
 #!/usr/bin/env groovy
+@Library('sd')_
+def kubeLabel = getKubeLabel()
 
 pipeline{
-  agent { label 'generic' }
+
+  agent {
+      kubernetes {
+          label "${kubeLabel}"
+          cloud 'Kube mwdevel'
+          defaultContainer 'runner'
+          inheritFrom 'ci-template'
+      }
+  }
 
   options {
     buildDiscarder(logRotator(numToKeepStr: '5'))

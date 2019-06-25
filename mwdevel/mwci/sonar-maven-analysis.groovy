@@ -1,4 +1,6 @@
 #!/usr/bin/env groovy
+@Library('sd')_
+def kubeLabel = getKubeLabel()
 
 def readProperty(filename, prop) {
   def value = sh script: "cat ${filename} | grep ${prop} | cut -d'=' -f2-", returnStdout: true
@@ -11,7 +13,16 @@ def jsonParse(url, basicAuth, field) {
 }
 
 pipeline {
-  agent none
+
+  agent {
+      kubernetes {
+          label "${kubeLabel}"
+          cloud 'Kube mwdevel'
+          defaultContainer 'runner'
+          inheritFrom 'ci-template'
+      }
+  }
+
 
   options {
     buildDiscarder(logRotator(numToKeepStr: '10'))
@@ -24,9 +35,7 @@ pipeline {
 
   stages {
     stage('analysis') {
-      agent { label 'maven' }
       steps {
-        container('maven-runner'){
           git url: "${params.REPO}", branch: "${params.BRANCH}"
 
           script {
@@ -38,14 +47,11 @@ pipeline {
           dir('target/sonar') {
             stash name: 'sonar-report', includes: 'report-task.txt'
           }
-        }
       }
     }
 
     stage('quality gate'){
-      agent { label 'generic' }
       steps {
-        container('generic-runner'){
           script {
             unstash 'sonar-report'
 
@@ -76,7 +82,6 @@ pipeline {
               currentBuild.result = 'UNSTABLE'
             }
           }
-        }
       }
     }
   }

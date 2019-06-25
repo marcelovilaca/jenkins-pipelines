@@ -1,7 +1,17 @@
 #!/usr/bin/env groovy
+@Library('sd')_
+def kubeLabel = getKubeLabel()
 
 pipeline{
-  agent none
+
+  agent {
+      kubernetes {
+          label "${kubeLabel}"
+          cloud 'Kube mwdevel'
+          defaultContainer 'runner'
+          inheritFrom 'ci-template'
+      }
+  }
 
   options {
     buildDiscarder(logRotator(numToKeepStr: '5'))
@@ -16,9 +26,7 @@ pipeline{
 
   stages {
     stage('promote'){
-      agent { label 'generic' }
       steps {
-        container('generic-runner'){
           script {
             def pkg_root = "/mnt/packages/repo/${params.PRODUCT}"
             def dest_dir = "${pkg_root}/${params.TARGET}"
@@ -30,14 +38,11 @@ pipeline{
 
             sh "rsync -av ${src_dir}/ ${dest_dir}/"
           }
-        }
       }
     }
 
     stage('rebuild RPMs repo'){
-      agent { label 'generic' }
       steps {
-        container('generic-runner'){
           script {
             def dest_dir = "/mnt/packages/repo/${params.PRODUCT}/${params.TARGET}"
 
@@ -51,14 +56,13 @@ pipeline{
               sh "repoview -t '${params.REPO_TITLE} (CentOS 7)' ${dest_dir}/el7/RPMS"
             }
           }
-        }
       }
     }
 
     stage('rebuild DEBs repo'){
       agent { label 'generic-ubuntu' }
       steps {
-        container('ubuntu-runner'){
+        container('runner'){
           script {
             def dest_dir = "/mnt/packages/repo/${params.PRODUCT}/${params.TARGET}"
 
