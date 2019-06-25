@@ -83,7 +83,7 @@ pipeline {
     stage('prepare DEB repo'){
       agent { label 'generic-ubuntu' }
       steps {
-        container('ubuntu-runner'){
+        container('runner'){
       	  script {
             step ([$class: 'CopyArtifact',
               projectName: "${env.JOB_NAME}/${params.PKG_TAG}",

@@ -1,7 +1,16 @@
 #!/usr/bin/env groovy
+@Library('sd')_
+def kubeLabel = getKubeLabel()
 
 pipeline {
-  agent { label 'kubectl' }
+  agent {
+      kubernetes {
+          label "${kubeLabel}"
+          cloud 'Kube mwdevel'
+          defaultContainer 'runner'
+          inheritFrom 'ci-template'
+      }
+  }
   
   options {
     timeout(time: 1, unit: 'HOURS')
@@ -19,7 +28,6 @@ pipeline {
   stages {
     stage('prepare'){
       steps {
-      	container('kubectl-runner'){
           sh "mkdir -p ${env.REPORT_DIR}"
 
           script {
@@ -51,38 +59,31 @@ spec:
 """
             writeFile file: "${env.POD_FILE}", text: "${pod_template}"
           }
-        }
       }
     }
     
 	stage('run'){
 	  steps {
-	    container('kubectl-runner'){
 	      sh "kubectl apply -f ${env.POD_FILE}"
 	      sh "while ( [ 'Running' != `kubectl get pod ${env.POD_NAME} -o jsonpath='{.status.phase}'` ] ); do echo 'Waiting pod...'; sleep 5; done"
 	
 	      sh "kubectl logs -f ${env.POD_NAME}"
-	    }
 	  }
 	
 	  post {  
 	    always { 
-	      container('kubectl-runner'){
 	        sh "kubectl delete -f ${env.POD_FILE}"
-	      } 
 	    }  
 	  }
 	}
 
     stage('archive & clean'){
       steps {
-      	container('kubectl-runner'){
       	  sh "cp -rv ${env.REPORT_DIR} ."
 	      dir("reports"){ 
 	        archiveArtifacts "**" 
 	      }
 	      sh "rm -rfv /srv/scratch/${env.BUILD_TAG}"
-        }
       }
     }
   }

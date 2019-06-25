@@ -1,7 +1,16 @@
 #!/usr/bin/env groovy
+@Library('sd')_
+def kubeLabel = getKubeLabel()
 
 pipeline {
-  agent { label 'kubectl' }
+  agent {
+      kubernetes {
+          label "${kubeLabel}"
+          cloud 'Kube mwdevel'
+          defaultContainer 'runner'
+          inheritFrom 'ci-template'
+      }
+  }
 
   options {
     timeout(time: 1, unit: 'HOURS')
@@ -19,9 +28,7 @@ pipeline {
   stages {
     stage('run'){
       steps {
-        container('kubectl-runner'){
           sh "find /srv/scratch/ -maxdepth 1 -type d -mtime +${params.DAYS} -print -exec rm -rf {} \\;"
-        }
       }
     }
   }
