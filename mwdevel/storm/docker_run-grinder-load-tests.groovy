@@ -1,9 +1,19 @@
 #!/usr/bin/env groovy
 
+@Library('sd')_
+def kubeLabel = getKubeLabel()
+
 def image, name, envvars
 
 pipeline {
-  agent { label 'docker' }
+  agent {
+    kubernetes {
+      label "${kubeLabel}"
+      cloud 'Kube mwdevel'
+      defaultContainer 'runner'
+      inheritFrom 'ci-template'
+    }
+  }
 
   options {
     timeout(time: 1, unit: 'HOURS')
@@ -36,44 +46,40 @@ pipeline {
   stages {
     stage ('prepare') {
       steps {
-        container('docker-runner') {
-          script {
-            image = "italiangrid/grinder:latest"
-            echo "image: ${image}"
-            name = "${env.JOB_BASE_NAME}-${env.BUILD_NUMBER}"
-            echo "name: ${name}"
-            def variables = []
-            variables.add("-e TESTSUITE_REPO=${params.TESTSUITE_REPO}")
-            variables.add("-e TESTSUITE_BRANCH=${params.TESTSUITE_BRANCH}")
-            variables.add("-e PROXY_VONAME=${params.PROXY_VONAME}")
-            variables.add("-e PROXY_USER=${params.PROXY_USER}")
-            variables.add("-e GRINDER_PROCESSES=${params.GRINDER_PROCESSES}")
-            variables.add("-e GRINDER_THREADS=${params.GRINDER_THREADS}")
-            variables.add("-e GRINDER_RUNS=${params.GRINDER_RUNS}")
-            variables.add("-e GRINDER_CONSOLE_USE=${params.GRINDER_CONSOLE_USE}")
-            variables.add("-e GRINDER_CONSOLE_HOST=${params.GRINDER_CONSOLE_HOST}")
-            variables.add("-e GRINDER_TEST=${params.GRINDER_TEST}")
-            variables.add("-e COMMON_STORM_FE_ENDPOINT_LIST=${params.COMMON_STORM_FE_ENDPOINT_LIST}")
-            variables.add("-e COMMON_STORM_DAV_ENDPOINT_LIST=${params.COMMON_STORM_DAV_ENDPOINT_LIST}")
-            variables.add("-e COMMON_TEST_STORAGEAREA=${params.COMMON_TEST_STORAGEAREA}")
-            variables.add("-e LOGGING_LEVEL=${params.LOGGING_LEVEL}")
-            envvars = variables.join(' ')
-            echo "env-vars: ${envvars}"
+        script {
+          image = "italiangrid/grinder:latest"
+          echo "image: ${image}"
+          name = "${env.JOB_BASE_NAME}-${env.BUILD_NUMBER}"
+          echo "name: ${name}"
+          def variables = []
+          variables.add("-e TESTSUITE_REPO=${params.TESTSUITE_REPO}")
+          variables.add("-e TESTSUITE_BRANCH=${params.TESTSUITE_BRANCH}")
+          variables.add("-e PROXY_VONAME=${params.PROXY_VONAME}")
+          variables.add("-e PROXY_USER=${params.PROXY_USER}")
+          variables.add("-e GRINDER_PROCESSES=${params.GRINDER_PROCESSES}")
+          variables.add("-e GRINDER_THREADS=${params.GRINDER_THREADS}")
+          variables.add("-e GRINDER_RUNS=${params.GRINDER_RUNS}")
+          variables.add("-e GRINDER_CONSOLE_USE=${params.GRINDER_CONSOLE_USE}")
+          variables.add("-e GRINDER_CONSOLE_HOST=${params.GRINDER_CONSOLE_HOST}")
+          variables.add("-e GRINDER_TEST=${params.GRINDER_TEST}")
+          variables.add("-e COMMON_STORM_FE_ENDPOINT_LIST=${params.COMMON_STORM_FE_ENDPOINT_LIST}")
+          variables.add("-e COMMON_STORM_DAV_ENDPOINT_LIST=${params.COMMON_STORM_DAV_ENDPOINT_LIST}")
+          variables.add("-e COMMON_TEST_STORAGEAREA=${params.COMMON_TEST_STORAGEAREA}")
+          variables.add("-e LOGGING_LEVEL=${params.LOGGING_LEVEL}")
+          envvars = variables.join(' ')
+          echo "env-vars: ${envvars}"
 
-            sh "docker pull ${image}"
-          }
+          sh "docker pull ${image}"
         }
       }
     }
 
     stage ('run'){
       steps {
-        container('docker-runner') {
-          script {
-              sh "docker run --name ${name} ${envvars} ${image}"
-              sh "docker logs ${name}>grinder.log"
-              archive 'grinder.log'
-          }
+        script {
+            sh "docker run --name ${name} ${envvars} ${image}"
+            sh "docker logs ${name}>grinder.log"
+            archive 'grinder.log'
         }
       }
     }

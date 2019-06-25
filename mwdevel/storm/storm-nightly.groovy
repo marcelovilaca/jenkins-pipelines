@@ -1,11 +1,21 @@
 #!/usr/bin/env groovy
 
+@Library('sd')_
+def kubeLabel = getKubeLabel()
+
 def pkg_build_number = 'nightly'
 def pkg_el6
 def pkg_el7
 
 pipeline {
-  agent none
+  agent {
+    kubernetes {
+      label "${kubeLabel}"
+      cloud 'Kube mwdevel'
+      defaultContainer 'runner'
+      inheritFrom 'ci-template'
+    }
+  }
 
   options {
     timeout(time: 3, unit: 'HOURS')
@@ -46,33 +56,28 @@ pipeline {
       }
     }
     stage('prepare EL6 RPM repo') {
-      agent { label 'generic' }
       steps {
-        container('generic-runner') {
-          script {
-            step ([$class: 'CopyArtifact',
-              projectName: "${env.JOB_NAME}/${params.PKG_TAG_EL6}",
-              filter: 'rpms/centos6/**',
-              selector: [$class: 'SpecificBuildSelector', buildNumber: "${pkg_el6.number}"]
-            ])
+        script {
+          step ([$class: 'CopyArtifact',
+            projectName: "${env.JOB_NAME}/${params.PKG_TAG_EL6}",
+            filter: 'rpms/centos6/**',
+            selector: [$class: 'SpecificBuildSelector', buildNumber: "${pkg_el6.number}"]
+          ])
 
-            dir('rpms') {
-              sh "mkdir -p el6/x86_64"
-              sh "mv centos6/*.rpm el6/x86_64/"
-              sh "createrepo el6/x86_64/"
-              sh "repoview el6/x86_64/"
-              stash includes: 'el6/', name: 'rpm6'
-            }
+          dir('rpms') {
+            sh "mkdir -p el6/x86_64"
+            sh "mv centos6/*.rpm el6/x86_64/"
+            sh "createrepo el6/x86_64/"
+            sh "repoview el6/x86_64/"
+            stash includes: 'el6/', name: 'rpm6'
           }
         }
       }
     }
     stage('create-repo-file-el6') {
-      agent { label 'generic' }
       steps {
-        container('generic-runner') {
-          script {
-            def repoStr = """[storm-nightly-centos6]
+        script {
+          def repoStr = """[storm-nightly-centos6]
 name=storm-nightly-centos6
 baseurl=https://repo.cloud.cnaf.infn.it/repository/storm/nightly/el6/x86_64/
 protect=1
@@ -80,10 +85,9 @@ enabled=1
 priority=1
 gpgcheck=0
 """
-            writeFile file: "storm-nightly-centos6.repo", text: "${repoStr}"
-          }
-          stash includes: '*.repo', name: 'repo6'
+          writeFile file: "storm-nightly-centos6.repo", text: "${repoStr}"
         }
+        stash includes: '*.repo', name: 'repo6'
       }
     }
 
@@ -107,23 +111,20 @@ gpgcheck=0
           return params.BUILD_PKG_EL7;
         }
       }
-      agent { label 'generic' }
       steps {
-        container('generic-runner') {
-          script {
-            step ([$class: 'CopyArtifact',
-              projectName: "${env.JOB_NAME}/${params.PKG_TAG_EL7}",
-              filter: 'rpms/centos7/**',
-              selector: [$class: 'SpecificBuildSelector', buildNumber: "${pkg_el7.number}"]
-            ])
+        script {
+          step ([$class: 'CopyArtifact',
+            projectName: "${env.JOB_NAME}/${params.PKG_TAG_EL7}",
+            filter: 'rpms/centos7/**',
+            selector: [$class: 'SpecificBuildSelector', buildNumber: "${pkg_el7.number}"]
+          ])
 
-            dir('rpms') {
-              sh "mkdir -p el7/x86_64"
-              sh "mv centos7/*.rpm el7/x86_64/"
-              sh "createrepo el7/x86_64/"
-              sh "repoview el7/x86_64/"
-              stash includes: 'el7/', name: 'rpm7'
-            }
+          dir('rpms') {
+            sh "mkdir -p el7/x86_64"
+            sh "mv centos7/*.rpm el7/x86_64/"
+            sh "createrepo el7/x86_64/"
+            sh "repoview el7/x86_64/"
+            stash includes: 'el7/', name: 'rpm7'
           }
         }
       }
@@ -134,11 +135,9 @@ gpgcheck=0
           return params.BUILD_PKG_EL7;
         }
       }
-      agent { label 'generic' }
       steps {
-        container('generic-runner') {
-          script {
-            def repoStr = """[storm-nightly-centos7]
+        script {
+          def repoStr = """[storm-nightly-centos7]
 name=storm-nightly-centos7
 baseurl=https://repo.cloud.cnaf.infn.it/repository/storm/nightly/el7/x86_64/
 protect=1
@@ -146,10 +145,9 @@ enabled=1
 priority=1
 gpgcheck=0
 """
-            writeFile file: "storm-nightly-centos7.repo", text: "${repoStr}"
-          }
-          stash includes: '*.repo', name: 'repo7'
+          writeFile file: "storm-nightly-centos7.repo", text: "${repoStr}"
         }
+        stash includes: '*.repo', name: 'repo7'
       }
     }
 
@@ -159,20 +157,17 @@ gpgcheck=0
           return params.BUILD_PKG_EL6;
         }
       }
-      agent { label 'generic' }
       steps {
-        container('generic-runner') {
-          deleteDir()
-          unstash 'rpm6'
-          unstash 'repo6'
+        deleteDir()
+        unstash 'rpm6'
+        unstash 'repo6'
 
-          withCredentials([
-            usernamePassword(credentialsId: 'jenkins-nexus', passwordVariable: 'password', usernameVariable: 'username')
-          ]) {
-            sh "nexus-assets-remove -u ${username} -p ${password} -H ${env.NEXUS_URL} -r storm -q nightly/storm-nightly-centos6.repo"
-            sh "nexus-assets-remove -u ${username} -p ${password} -H ${env.NEXUS_URL} -r storm -q nightly/el6"
-            sh "nexus-assets-upload -u ${username} -p ${password} -H ${env.NEXUS_URL} -r storm/nightly -d ."
-          }
+        withCredentials([
+          usernamePassword(credentialsId: 'jenkins-nexus', passwordVariable: 'password', usernameVariable: 'username')
+        ]) {
+          sh "nexus-assets-remove -u ${username} -p ${password} -H ${env.NEXUS_URL} -r storm -q nightly/storm-nightly-centos6.repo"
+          sh "nexus-assets-remove -u ${username} -p ${password} -H ${env.NEXUS_URL} -r storm -q nightly/el6"
+          sh "nexus-assets-upload -u ${username} -p ${password} -H ${env.NEXUS_URL} -r storm/nightly -d ."
         }
       }
     }
@@ -183,20 +178,17 @@ gpgcheck=0
           return params.BUILD_PKG_EL7;
         }
       }
-      agent { label 'generic' }
       steps {
-        container('generic-runner') {
-          deleteDir()
-          unstash 'rpm7'
-          unstash 'repo7'
+        deleteDir()
+        unstash 'rpm7'
+        unstash 'repo7'
 
-          withCredentials([
-            usernamePassword(credentialsId: 'jenkins-nexus', passwordVariable: 'password', usernameVariable: 'username')
-          ]) {
-            sh "nexus-assets-remove -u ${username} -p ${password} -H ${env.NEXUS_URL} -r storm -q nightly/storm-nightly-centos7.repo"
-            sh "nexus-assets-remove -u ${username} -p ${password} -H ${env.NEXUS_URL} -r storm -q nightly/el7"
-            sh "nexus-assets-upload -u ${username} -p ${password} -H ${env.NEXUS_URL} -r storm/nightly -d ."
-          }
+        withCredentials([
+          usernamePassword(credentialsId: 'jenkins-nexus', passwordVariable: 'password', usernameVariable: 'username')
+        ]) {
+          sh "nexus-assets-remove -u ${username} -p ${password} -H ${env.NEXUS_URL} -r storm -q nightly/storm-nightly-centos7.repo"
+          sh "nexus-assets-remove -u ${username} -p ${password} -H ${env.NEXUS_URL} -r storm -q nightly/el7"
+          sh "nexus-assets-upload -u ${username} -p ${password} -H ${env.NEXUS_URL} -r storm/nightly -d ."
         }
       }
     }
