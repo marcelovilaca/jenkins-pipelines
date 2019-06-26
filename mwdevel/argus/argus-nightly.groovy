@@ -1,9 +1,19 @@
 #!/usr/bin/env groovy
 
+@Library('sd')_
+def kubeLabel = getKubeLabel()
 def build_number, pkg_el6, pkg_el7, job_to_build
 
 pipeline {
-  agent { label 'generic' }
+
+  agent {
+    kubernetes {
+      label "${kubeLabel}"
+      cloud 'Kube mwdevel'
+      defaultContainer 'runner'
+      inheritFrom 'ci-template'
+    }
+  }
 	
   triggers {
     cron('@midnight')
@@ -65,31 +75,29 @@ pipeline {
 
     stage('archive'){
       steps {
-        container('generic-runner'){
-          script {
-            step ([$class: 'CopyArtifact',
-              projectName: "${job_to_build}",
-              filter: 'repo/centos6/**',
-              selector: [$class: 'SpecificBuildSelector', buildNumber: "${pkg_el6.number}"]
-            ])
+        script {
+          step ([$class: 'CopyArtifact',
+            projectName: "${job_to_build}",
+            filter: 'repo/centos6/**',
+            selector: [$class: 'SpecificBuildSelector', buildNumber: "${pkg_el6.number}"]
+          ])
 
-            step ([$class: 'CopyArtifact',
-              projectName: "${job_to_build}",
-              filter: 'repo/centos7/**',
-              selector: [$class: 'SpecificBuildSelector', buildNumber: "${pkg_el7.number}"]
-            ])
+          step ([$class: 'CopyArtifact',
+            projectName: "${job_to_build}",
+            filter: 'repo/centos7/**',
+            selector: [$class: 'SpecificBuildSelector', buildNumber: "${pkg_el7.number}"]
+          ])
 
-            dir('repo') {
-              sh "mkdir -p {el6,el7}"
-              sh "mv centos6/* el6/"
-              sh "repoview el6/"
-           
-              sh "mv centos7/* el7/"
-              sh "repoview el7/"
-              sh "rm -rfv centos6/ centos7/"
-           
-              stash includes: '**', name: 'rpms'
-            }
+          dir('repo') {
+            sh "mkdir -p {el6,el7}"
+            sh "mv centos6/* el6/"
+            sh "repoview el6/"
+         
+            sh "mv centos7/* el7/"
+            sh "repoview el7/"
+            sh "rm -rfv centos6/ centos7/"
+         
+            stash includes: '**', name: 'rpms'
           }
         }
       }
@@ -97,16 +105,14 @@ pipeline {
     
     stage('push to Nexus'){
       steps {
-      	container('generic-runner'){
-      	  deleteDir()
-		  unstash 'rpms'
+    	  deleteDir()
+		    unstash 'rpms'
 
-          withCredentials([
-            usernamePassword(credentialsId: 'jenkins-nexus', passwordVariable: 'password', usernameVariable: 'username')
-          ]) {
-            sh "nexus-assets-remove -u ${username} -p ${password} -H ${env.NEXUS_URL} -r argus -q nightly/"
-            sh "nexus-assets-upload -u ${username} -p ${password} -H ${env.NEXUS_URL} -r argus/nightly -d ."
-          }
+        withCredentials([
+          usernamePassword(credentialsId: 'jenkins-nexus', passwordVariable: 'password', usernameVariable: 'username')
+        ]) {
+          sh "nexus-assets-remove -u ${username} -p ${password} -H ${env.NEXUS_URL} -r argus -q nightly/"
+          sh "nexus-assets-upload -u ${username} -p ${password} -H ${env.NEXUS_URL} -r argus/nightly -d ."
         }
       }
     }
@@ -118,8 +124,8 @@ pipeline {
     }
 	
     changed {
-      script{
-        if('SUCCESS'.equals(currentBuild.currentResult)) {
+      script {
+        if ('SUCCESS'.equals(currentBuild.currentResult)) {
           slackSend color: 'good', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Back to normal (<${env.BUILD_URL}|Open>)"
         }
       }
