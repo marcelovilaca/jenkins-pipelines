@@ -1,7 +1,18 @@
 #!/usr/bin/env groovy
 
+@Library('sd')_
+def kubeLabel = getKubeLabel()
+
 pipeline {
-  agent { label 'generic' }
+
+  agent {
+    kubernetes {
+      label "${kubeLabel}"
+      cloud 'Kube mwdevel'
+      defaultContainer 'runner'
+      inheritFrom 'ci-template'
+    }
+  }
 
   options {
     timeout(time: 1, unit: 'HOURS')
@@ -15,9 +26,8 @@ pipeline {
   stages {
     stage('create repo') {
       steps {
-        container('generic-runner') {
-          cleanWs()
-          sh """
+        cleanWs()
+        sh """
 
 mkdir yum
 
@@ -79,16 +89,14 @@ enabled=1
 priority=1
 gpgcheck=0" > gpfs.repo
 
-          """
-          archiveArtifacts "yum/*.rpm, yum/repodata/*, gpfs.repo"
-        }
+        """
+        archiveArtifacts "yum/*.rpm, yum/repodata/*, gpfs.repo"
       }
     }
-    stage('push to Nexus'){
+    stage('push to Nexus') {
       steps {
-        container('generic-runner'){
-          sh "rm -rf yum/repodata gpfs.repo"
-          sh """
+        sh "rm -rf yum/repodata gpfs.repo"
+        sh """
 echo -n "[GPFS]
 name=GPFS
 baseurl=https://repo.cloud.cnaf.infn.it/repository/gpfs/yum/
@@ -97,13 +105,12 @@ enabled=1
 priority=1
 gpgcheck=0" > gpfs.repo
 """
-          sh "ls -l"
-          withCredentials([
-            usernamePassword(credentialsId: 'jenkins-nexus', passwordVariable: 'password', usernameVariable: 'username')
-          ]) {
-            sh "nexus-assets-remove -u ${username} -p ${password} -H ${env.NEXUS_URL} -r gpfs -q /"
-            sh "nexus-assets-upload -u ${username} -p ${password} -H ${env.NEXUS_URL} -r gpfs -d ."
-          }
+        sh "ls -l"
+        withCredentials([
+          usernamePassword(credentialsId: 'jenkins-nexus', passwordVariable: 'password', usernameVariable: 'username')
+        ]) {
+          sh "nexus-assets-remove -u ${username} -p ${password} -H ${env.NEXUS_URL} -r gpfs -q /"
+          sh "nexus-assets-upload -u ${username} -p ${password} -H ${env.NEXUS_URL} -r gpfs -d ."
         }
       }
     }
