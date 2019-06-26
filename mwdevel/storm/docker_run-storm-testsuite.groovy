@@ -1,9 +1,18 @@
 #!/usr/bin/env groovy
 
+@Library('sd')_
+def kubeLabel = getKubeLabel()
 def image, name, variables
 
 pipeline {
-  agent { label 'docker' }
+  agent {
+    kubernetes {
+      label "${kubeLabel}"
+      cloud 'Kube mwdevel'
+      defaultContainer 'runner'
+      inheritFrom 'ci-template'
+    }
+  }
 
   options {
     timeout(time: 1, unit: 'HOURS')
@@ -24,42 +33,38 @@ pipeline {
   stages {
     stage ('prepare') {
       steps {
-        container('docker-runner') {
-          script {
-            image = "${env.DOCKER_REGISTRY_HOST}/italiangrid/storm-testsuite:latest"
-            echo "image: ${image}"
-            name = "${env.JOB_BASE_NAME}-${env.BUILD_NUMBER}"
-            echo "name: ${name}"
-            sh "docker pull ${image}"
-          }
+        script {
+          image = "${env.DOCKER_REGISTRY_HOST}/italiangrid/storm-testsuite:latest"
+          echo "image: ${image}"
+          name = "${env.JOB_BASE_NAME}-${env.BUILD_NUMBER}"
+          echo "name: ${name}"
+          sh "docker pull ${image}"
         }
       }
     }
 
     stage ('run'){
       steps {
-        container('docker-runner') {
-          script {
-            withCredentials([
-              usernamePassword(credentialsId: 'fa43a013-7c86-410f-8a8f-600b92706989', passwordVariable: 'CDMI_CLIENT_SECRET', usernameVariable: 'CDMI_CLIENT_ID'),
-              usernamePassword(credentialsId: 'a5ca708a-eca8-4fc0-83cd-eb3695f083a1', passwordVariable: 'IAM_USER_PASSWORD', usernameVariable: 'IAM_USER_NAME')
-            ]) {
-              variables = []
-              variables.add("-e TESTSUITE_BRANCH=${params.TESTSUITE_BRANCH}")
-              variables.add("-e STORM_BE_HOST=${params.STORM_BE_HOST}")
-              variables.add("-e CDMI_ENDPOINT=${params.CDMI_ENDPOINT}")
-              variables.add("-e TESTSUITE_EXCLUDE=${params.TESTSUITE_EXCLUDE}")
-              variables.add("-e TESTSUITE_SUITE=${params.TESTSUITE_SUITE}")
-              variables.add("-e CDMI_CLIENT_ID=${CDMI_CLIENT_ID}")
-              variables.add("-e CDMI_CLIENT_SECRET=${CDMI_CLIENT_SECRET}")
-              variables.add("-e IAM_USER_NAME=${IAM_USER_NAME}")
-              variables.add("-e IAM_USER_PASSWORD=${IAM_USER_PASSWORD}")
-              variables.add("-e STORM_STORAGE_ROOT_DIR=${params.STORM_STORAGE_ROOT_DIR}")
-              envvars = variables.join(' ')
-              echo "env-vars: ${envvars}"
+        script {
+          withCredentials([
+            usernamePassword(credentialsId: 'fa43a013-7c86-410f-8a8f-600b92706989', passwordVariable: 'CDMI_CLIENT_SECRET', usernameVariable: 'CDMI_CLIENT_ID'),
+            usernamePassword(credentialsId: 'a5ca708a-eca8-4fc0-83cd-eb3695f083a1', passwordVariable: 'IAM_USER_PASSWORD', usernameVariable: 'IAM_USER_NAME')
+          ]) {
+            variables = []
+            variables.add("-e TESTSUITE_BRANCH=${params.TESTSUITE_BRANCH}")
+            variables.add("-e STORM_BE_HOST=${params.STORM_BE_HOST}")
+            variables.add("-e CDMI_ENDPOINT=${params.CDMI_ENDPOINT}")
+            variables.add("-e TESTSUITE_EXCLUDE=${params.TESTSUITE_EXCLUDE}")
+            variables.add("-e TESTSUITE_SUITE=${params.TESTSUITE_SUITE}")
+            variables.add("-e CDMI_CLIENT_ID=${CDMI_CLIENT_ID}")
+            variables.add("-e CDMI_CLIENT_SECRET=${CDMI_CLIENT_SECRET}")
+            variables.add("-e IAM_USER_NAME=${IAM_USER_NAME}")
+            variables.add("-e IAM_USER_PASSWORD=${IAM_USER_PASSWORD}")
+            variables.add("-e STORM_STORAGE_ROOT_DIR=${params.STORM_STORAGE_ROOT_DIR}")
+            envvars = variables.join(' ')
+            echo "env-vars: ${envvars}"
 
-              sh returnStatus: true, script: "docker run --name ${name} ${envvars} ${image}"
-            }
+            sh returnStatus: true, script: "docker run --name ${name} ${envvars} ${image}"
           }
         }
       }
@@ -67,20 +72,18 @@ pipeline {
 
     stage('report'){
       steps {
-        container('docker-runner'){
-          sh "docker cp ${name}:/home/tester/storm-testsuite/reports ."
-          archive 'reports/**'
+        sh "docker cp ${name}:/home/tester/storm-testsuite/reports ."
+        archive 'reports/**'
 
-          step([$class: 'RobotPublisher',
-            disableArchiveOutput: false,
-            logFileName: 'log.html',
-            otherFiles: '*.png',
-            outputFileName: 'output.xml',
-            outputPath: "reports",
-            passThreshold: 100,
-            reportFileName: 'report.html',
-            unstableThreshold: 90])
-        }
+        step([$class: 'RobotPublisher',
+          disableArchiveOutput: false,
+          logFileName: 'log.html',
+          otherFiles: '*.png',
+          outputFileName: 'output.xml',
+          outputPath: "reports",
+          passThreshold: 100,
+          reportFileName: 'report.html',
+          unstableThreshold: 90])
       }
     }
   }
