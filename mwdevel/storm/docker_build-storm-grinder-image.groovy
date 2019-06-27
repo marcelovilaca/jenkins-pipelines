@@ -1,14 +1,16 @@
 #!/usr/bin/env groovy
+@Library('sd')_
+def kubeLabel = getKubeLabel()
 
 pipeline {
 
   agent {
-      kubernetes {
-          label "${env.JOB_NAME}-${env.BUILD_NUMBER}"
-          cloud 'Kube mwdevel'
-          defaultContainer 'jnlp'
-          inheritFrom 'ci-template'
-      }
+    kubernetes {
+      label "${kubeLabel}"
+      cloud 'Kube mwdevel'
+      defaultContainer 'runner'
+      inheritFrom 'ci-template'
+    }
   }
 
   options {
@@ -30,31 +32,25 @@ pipeline {
   stages {
     stage('prepare'){
       steps {
-        container('runner'){
-          deleteDir()
-          git url: "${env.REPOSITORY}", branch: "${env.BRANCH}"
-          sh "docker pull ${env.DOCKER_REGISTRY_HOST}/italiangrid/storm-testsuite"
-          sh "docker tag ${env.DOCKER_REGISTRY_HOST}/italiangrid/storm-testsuite italiangrid/storm-testsuite"
+        deleteDir()
+        git url: "${env.REPOSITORY}", branch: "${env.BRANCH}"
+        sh "docker pull ${env.DOCKER_REGISTRY_HOST}/italiangrid/storm-testsuite"
+        sh "docker tag ${env.DOCKER_REGISTRY_HOST}/italiangrid/storm-testsuite italiangrid/storm-testsuite"
+      }
+    }
+
+    stage('build') {
+      steps {
+        dir("${env.DIRECTORY}") { 
+          sh "docker build -t ${env.DOCKER_REGISTRY_HOST}/italiangrid/grinder ."
         }
       }
     }
 
-    stage('build'){
+    stage('push') {
       steps {
-        container('runner'){
-          dir("${env.DIRECTORY}"){ 
-            sh "docker build -t ${env.DOCKER_REGISTRY_HOST}/italiangrid/grinder ."
-          }
-        }
-      }
-    }
-
-    stage('push'){
-      steps {
-        container('runner'){
-          dir("${env.DIRECTORY}"){ 
-            sh "docker push ${env.DOCKER_REGISTRY_HOST}/italiangrid/grinder"
-          }
+        dir("${env.DIRECTORY}") { 
+          sh "docker push ${env.DOCKER_REGISTRY_HOST}/italiangrid/grinder"
         }
       }
     }
@@ -66,8 +62,8 @@ pipeline {
     }
 
     changed {
-      script{
-        if('SUCCESS'.equals(currentBuild.currentResult)) {
+      script {
+        if ('SUCCESS'.equals(currentBuild.currentResult)) {
           slackSend color: 'good', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Back to normal (<${env.BUILD_URL}|Open>)"
         }
       }

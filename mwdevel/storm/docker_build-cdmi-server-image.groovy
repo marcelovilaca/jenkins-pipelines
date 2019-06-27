@@ -1,14 +1,16 @@
 #!/usr/bin/env groovy
+@Library('sd')_
+def kubeLabel = getKubeLabel()
 
 pipeline {
 
   agent {
-      kubernetes {
-          label "${env.JOB_NAME}-${env.BUILD_NUMBER}"
-          cloud 'Kube mwdevel'
-          defaultContainer 'jnlp'
-          inheritFrom 'ci-template'
-      }
+    kubernetes {
+      label "${kubeLabel}"
+      cloud 'Kube mwdevel'
+      defaultContainer 'runner'
+      inheritFrom 'ci-template'
+    }
   }
 
   options {
@@ -33,19 +35,15 @@ pipeline {
   stages {
     stage('prepare'){
       steps {
-        container('runner'){
-          deleteDir()
-          git url: "${env.REPOSITORY}", branch: "${env.BRANCH}"
-        }
+        deleteDir()
+        git url: "${env.REPOSITORY}", branch: "${env.BRANCH}"
       }
     }
 
     stage('build'){
       steps {
-        container('runner'){
-          dir("${env.DIRECTORY}"){
-            sh 'sh build-image.sh'
-          }
+        dir("${env.DIRECTORY}"){
+          sh 'sh build-image.sh'
         }
       }
     }
@@ -57,10 +55,8 @@ pipeline {
         }
       }
       steps {
-        container('runner') {
-          dir("${env.DIRECTORY}") {
-            sh "sh push-image.sh"
-          }
+        dir("${env.DIRECTORY}") {
+          sh "sh push-image.sh"
         }
       }
     }
@@ -72,12 +68,10 @@ pipeline {
         }
       }
       steps {
-        container('runner') {
-          script {
-            withDockerRegistry([ credentialsId: "dockerhub-enrico", url: "" ]) {
-              dir("${env.DIRECTORY}") {
-                sh "sh push-image-dockerhub.sh"
-              }
+        script {
+          withDockerRegistry([ credentialsId: "dockerhub-enrico", url: "" ]) {
+            dir("${env.DIRECTORY}") {
+              sh "sh push-image-dockerhub.sh"
             }
           }
         }
@@ -91,8 +85,8 @@ pipeline {
     }
 
     changed {
-      script{
-        if('SUCCESS'.equals(currentBuild.currentResult)) {
+      script {
+        if ('SUCCESS'.equals(currentBuild.currentResult)) {
           slackSend color: 'good', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Back to normal (<${env.BUILD_URL}|Open>)"
         }
       }
