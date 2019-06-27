@@ -23,10 +23,8 @@ pipeline {
   }
 
   parameters {
-    string(name: 'PKG_TAG_EL6', defaultValue: 'release-el6-1-11-15', description: 'The branch of the EL6 pkg.storm repo')
-    string(name: 'PKG_TAG_EL7', defaultValue: 'release-el7-1-11-15', description: 'The branch of the EL7 pkg.storm repo')
-    booleanParam(name: 'REBUILD_PKG_EL6', defaultValue: true, description: 'Rebuild the branch of the EL6 pkg.storm repo before copying artifacts')
-    booleanParam(name: 'REBUILD_PKG_EL7', defaultValue: true, description: 'Rebuild the branch of the EL7 pkg.storm repo before copying artifacts')
+    string(name: 'PKG_TAG_EL6', defaultValue: 'release-el6-1-11-16', description: 'The branch of the EL6 pkg.storm repo')
+    string(name: 'PKG_TAG_EL7', defaultValue: 'release-el7-1-11-16', description: 'The branch of the EL7 pkg.storm repo')
   }
 
   environment {
@@ -36,11 +34,6 @@ pipeline {
 
   stages {
     stage('create EL6 RPMs') {
-      when {
-        expression {
-          return params.REBUILD_PKG_EL6;
-        }
-      }
       steps {
         script {
           pkg_el6 = build job: "${env.JOB_NAME}/${params.PKG_TAG_EL6}", parameters: [
@@ -88,11 +81,6 @@ gpgcheck=0
     }
 
     stage('create EL7 RPMs') {
-      when {
-        expression {
-          return params.REBUILD_PKG_EL7;
-        }
-      }
       steps {
         script {
           pkg_el7 = build job: "${env.JOB_NAME}/${params.PKG_TAG_EL7}", parameters: [
