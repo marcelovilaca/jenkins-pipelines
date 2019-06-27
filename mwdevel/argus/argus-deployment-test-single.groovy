@@ -1,7 +1,18 @@
 #!/usr/bin/env groovy
 
+@Library('sd')_
+def kubeLabel = getKubeLabel()
+
 pipeline {
-  agent { label 'docker' }
+
+  agent {
+    kubernetes {
+      label "${kubeLabel}"
+      cloud 'Kube mwdevel'
+      defaultContainer 'runner'
+      inheritFrom 'ci-template'
+    }
+  }
 
   options {
     timeout(time: 2, unit: 'HOURS')
@@ -17,52 +28,50 @@ pipeline {
   }
 
   stages {
-    stage('prepare'){
+    stage('prepare') {
       steps{
         cleanWs notFailBuild: true
         git 'https://github.com/marcocaberletti/argus-deployment-test.git'
       }
     }
 
-    stage('run'){
+    stage('run') {
       environment {
         PLATFORM="${params.PLATFORM}"
         TESTSUITE_REPO="${params.TESTSUITE_REPO}"
         TESTSUITE_BRANCH="${params.TESTSUITE_BRANCH}"
         DOCKER_REGISTRY_HOST = "${env.DOCKER_REGISTRY_HOST}"
       }
-      steps{
-        container('docker-runner'){
-          script{
-            def url = ''
+      steps {
+        script {
+          def url = ''
 
-            if("${params.REPO}" != "ci") {
-              def gh_repo="https://marcocaberletti.github.io"
-              def version="${params.PLATFORM}".replace("centos", "el")
+          if("${params.REPO}" != "ci") {
+            def gh_repo="https://marcocaberletti.github.io"
+            def version="${params.PLATFORM}".replace("centos", "el")
 
-              if("${params.GH_REPO}".equals("production")) {
-                gh_repo="https://argus-authz.github.io"
-              }
-
-              url = "${gh_repo}/repo/${params.REPO}/${version}/RPMS/"
+            if("${params.GH_REPO}".equals("production")) {
+              gh_repo="https://argus-authz.github.io"
             }
 
-            dir('all-in-one'){
-              sh "export FACTER_ARGUS_REPO_BASE_URL=${url}"
-              sh "./deploy.sh"
-            }
+            url = "${gh_repo}/repo/${params.REPO}/${version}/RPMS/"
           }
 
-          step([$class: 'RobotPublisher',
-            disableArchiveOutput: false,
-            logFileName: 'log.html',
-            otherFiles: '',
-            outputFileName: 'output.xml',
-            outputPath: "all-in-one/argus_reports/reports",
-            passThreshold: 100,
-            reportFileName: 'report.html',
-            unstableThreshold: 90])
+          dir('all-in-one') {
+            sh "export FACTER_ARGUS_REPO_BASE_URL=${url}"
+            sh "./deploy.sh"
+          }
         }
+
+        step([$class: 'RobotPublisher',
+          disableArchiveOutput: false,
+          logFileName: 'log.html',
+          otherFiles: '',
+          outputFileName: 'output.xml',
+          outputPath: "all-in-one/argus_reports/reports",
+          passThreshold: 100,
+          reportFileName: 'report.html',
+          unstableThreshold: 90])
       }
     }
   }
@@ -77,8 +86,8 @@ pipeline {
     }
 
     changed {
-      script{
-        if('SUCCESS'.equals(currentBuild.currentResult)) {
+      script {
+        if ('SUCCESS'.equals(currentBuild.currentResult)) {
           slackSend color: 'good', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Back to normal (<${env.BUILD_URL}|Open>)"
         }
       }

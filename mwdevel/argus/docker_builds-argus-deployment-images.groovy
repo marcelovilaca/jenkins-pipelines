@@ -1,21 +1,29 @@
 #!/usr/bin/env groovy
 
-def build_image(platform, deployment){
-  node('docker'){
-    container('runner'){
-      deleteDir()
-      unstash "source"
+@Library('sd')_
+def kubeLabel = getKubeLabel()
 
-      dir("${deployment}"){
-        sh "PLATFORM=${platform} sh build-images.sh"
-        sh "PLATFORM=${platform} sh push-images.sh"
-      }
+def build_image(platform, deployment){
+  node('docker') {
+    deleteDir()
+    unstash "source"
+
+    dir("${deployment}") {
+      sh "PLATFORM=${platform} sh build-images.sh"
+      sh "PLATFORM=${platform} sh push-images.sh"
     }
   }
 }
 
 pipeline {
-  agent none
+  agent {
+    kubernetes {
+      label "${kubeLabel}"
+      cloud 'Kube mwdevel'
+      defaultContainer 'runner'
+      inheritFrom 'ci-template'
+    }
+  }
 
   options {
     buildDiscarder(logRotator(numToKeepStr: '5'))
@@ -29,22 +37,21 @@ pipeline {
   }
 
   stages {
-    stage('prepare'){
-      agent { label 'generic' }
+    stage('prepare') {
       steps {
         git 'https://github.com/marcocaberletti/argus-deployment-test.git'
         stash name: "source"
       }
     }
 
-    stage('build images'){
+    stage('build images') {
       steps {
-        parallel(
-            "centos6-allinone"   : { build_image('centos6', 'all-in-one') },
-            "centos6-distributed": { build_image('centos6', 'distributed') },
-            "centos7-allinone"   : { build_image('centos7', 'all-in-one') },
-            "centos7-distributed": { build_image('centos7', 'distributed') },
-            )
+        parallel (
+          "centos6-allinone"   : { build_image('centos6', 'all-in-one') },
+          "centos6-distributed": { build_image('centos6', 'distributed') },
+          "centos7-allinone"   : { build_image('centos7', 'all-in-one') },
+          "centos7-distributed": { build_image('centos7', 'distributed') },
+        )
       }
     }
   }
@@ -55,8 +62,8 @@ pipeline {
     }
 
     changed {
-      script{
-        if('SUCCESS'.equals(currentBuild.currentResult)) {
+      script {
+        if ('SUCCESS'.equals(currentBuild.currentResult)) {
           slackSend color: 'good', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Back to normal (<${env.BUILD_URL}|Open>)"
         }
       }
