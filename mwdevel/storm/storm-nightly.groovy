@@ -27,12 +27,8 @@ pipeline {
   }
 
   parameters {
-    booleanParam(name: 'BUILD_PKG_EL6', defaultValue: true, description: 'Build EL6 packages')
     string(name: 'PKG_TAG_EL6', defaultValue: 'release-el6-1-11-16', description: 'The branch of the EL6 pkg.storm repo' )
-    booleanParam(name: 'REBUILD_PKG_EL6', defaultValue: true, description: 'Rebuild the branch of the EL6 pkg.storm repo before copying artifacts')
-    booleanParam(name: 'BUILD_PKG_EL7', defaultValue: true, description: 'Build EL7 packages')
     string(name: 'PKG_TAG_EL7', defaultValue: 'release-el7-1-11-16', description: 'The branch of the EL7 pkg.storm repo' )
-    booleanParam(name: 'REBUILD_PKG_EL7', defaultValue: true, description: 'Rebuild the branch of the EL7 pkg.storm repo before copying artifacts')
   }
 
   environment {
@@ -42,11 +38,6 @@ pipeline {
 
   stages {
     stage('create EL6 RPMs') {
-      when {
-        expression {
-          return params.REBUILD_PKG_EL6;
-        }
-      }
       steps {
         script {
           pkg_el6 = build job: "${env.JOB_NAME}/${params.PKG_TAG_EL6}", parameters: [
@@ -92,11 +83,6 @@ gpgcheck=0
     }
 
     stage('create EL7 RPMs') {
-      when {
-        expression {
-          return params.BUILD_PKG_EL7 && params.REBUILD_PKG_EL7;
-        }
-      }
       steps {
         script {
           pkg_el7 = build job: "${env.JOB_NAME}/${params.PKG_TAG_EL7}", parameters: [
@@ -165,9 +151,9 @@ gpgcheck=0
         withCredentials([
           usernamePassword(credentialsId: 'jenkins-nexus', passwordVariable: 'password', usernameVariable: 'username')
         ]) {
-          sh "nexus-assets-remove -u ${username} -p ${password} -H ${env.NEXUS_URL} -r storm -q nightly/storm-nightly-centos6.repo"
-          sh "nexus-assets-remove -u ${username} -p ${password} -H ${env.NEXUS_URL} -r storm -q nightly/el6"
-          sh "nexus-assets-upload -u ${username} -p ${password} -H ${env.NEXUS_URL} -r storm/nightly -d ."
+          sh "/helper-scripts/scripts/nexus-assets-remove -u ${username} -p ${password} -H ${env.NEXUS_URL} -r storm -q nightly/storm-nightly-centos6.repo"
+          sh "/helper-scripts/scripts/nexus-assets-remove -u ${username} -p ${password} -H ${env.NEXUS_URL} -r storm -q nightly/el6"
+          sh "/helper-scripts/scripts/nexus-assets-upload -u ${username} -p ${password} -H ${env.NEXUS_URL} -r storm/nightly -d ."
         }
       }
     }
@@ -186,9 +172,9 @@ gpgcheck=0
         withCredentials([
           usernamePassword(credentialsId: 'jenkins-nexus', passwordVariable: 'password', usernameVariable: 'username')
         ]) {
-          sh "nexus-assets-remove -u ${username} -p ${password} -H ${env.NEXUS_URL} -r storm -q nightly/storm-nightly-centos7.repo"
-          sh "nexus-assets-remove -u ${username} -p ${password} -H ${env.NEXUS_URL} -r storm -q nightly/el7"
-          sh "nexus-assets-upload -u ${username} -p ${password} -H ${env.NEXUS_URL} -r storm/nightly -d ."
+          sh "/helper-scripts/scripts/nexus-assets-remove -u ${username} -p ${password} -H ${env.NEXUS_URL} -r storm -q nightly/storm-nightly-centos7.repo"
+          sh "/helper-scripts/scripts/nexus-assets-remove -u ${username} -p ${password} -H ${env.NEXUS_URL} -r storm -q nightly/el7"
+          sh "/helper-scripts/scripts/nexus-assets-upload -u ${username} -p ${password} -H ${env.NEXUS_URL} -r storm/nightly -d ."
         }
       }
     }
