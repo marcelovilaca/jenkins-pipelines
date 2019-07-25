@@ -92,11 +92,6 @@ gpgcheck=0
       }
     }
     stage('prepare EL7 RPM repo') {
-      when {
-        expression {
-          return params.BUILD_PKG_EL7;
-        }
-      }
       steps {
         script {
           step ([$class: 'CopyArtifact',
@@ -116,11 +111,6 @@ gpgcheck=0
       }
     }
     stage('create-repo-file-el7') {
-      when {
-        expression {
-          return params.BUILD_PKG_EL7;
-        }
-      }
       steps {
         script {
           def repoStr = """[storm-nightly-centos7]
@@ -138,11 +128,6 @@ gpgcheck=0
     }
 
     stage('push EL6 to Nexus') {
-      when {
-        expression {
-          return params.BUILD_PKG_EL6;
-        }
-      }
       steps {
         deleteDir()
         unstash 'rpm6'
@@ -159,11 +144,6 @@ gpgcheck=0
     }
 
     stage('push EL7 to Nexus') {
-      when {
-        expression {
-          return params.BUILD_PKG_EL7;
-        }
-      }
       steps {
         deleteDir()
         unstash 'rpm7'
