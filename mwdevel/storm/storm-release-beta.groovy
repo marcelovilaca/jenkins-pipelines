@@ -138,8 +138,8 @@ gpgcheck=0
         withCredentials([
           usernamePassword(credentialsId: 'jenkins-nexus', passwordVariable: 'password', usernameVariable: 'username')
         ]) {
-          sh "nexus-assets-remove -u ${username} -p ${password} -H ${env.NEXUS_URL} -r storm -q beta/"
-          sh "nexus-assets-upload -u ${username} -p ${password} -H ${env.NEXUS_URL} -r storm/beta -d ."
+          sh "/helper-scripts/scripts/nexus-assets-remove -u ${username} -p ${password} -H ${env.NEXUS_URL} -r storm -q beta/"
+          sh "/helper-scripts/scripts/nexus-assets-upload -u ${username} -p ${password} -H ${env.NEXUS_URL} -r storm/beta -d ."
         }
       }
     }
