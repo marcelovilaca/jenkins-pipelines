@@ -25,10 +25,8 @@ pipeline {
   stages {
     stage('prepare'){
       steps {
-        container('runner'){
-          deleteDir()
-          git url: "${env.REPOSITORY}", branch: "${env.BRANCH}"
-        }
+        deleteDir()
+        git url: "${env.REPOSITORY}", branch: "${env.BRANCH}"
       }
     }
 
