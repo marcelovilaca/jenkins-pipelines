@@ -2,14 +2,7 @@
 
 pipeline {
 
-  agent {
-      kubernetes {
-          label "${env.JOB_NAME}-${env.BUILD_NUMBER}"
-          cloud 'Kube mwdevel'
-          defaultContainer 'jnlp'
-          inheritFrom 'ci-template'
-      }
-  }
+  agent { label 'docker' }
 
   options {
     timeout(time: 1, unit: 'HOURS')
@@ -25,29 +18,23 @@ pipeline {
   stages {
     stage('prepare'){
       steps {
-        container('runner'){
-          deleteDir()
-          git 'https://github.com/italiangrid/docker-scripts'
-        }
+        deleteDir()
+        git 'https://github.com/italiangrid/docker-scripts'
       }
     }
 
     stage('build'){
       steps {
-        container('runner'){
-          dir('ggus-mon-image'){ 
-            sh './build-image.sh' 
-          }
+        dir('ggus-mon-image'){ 
+          sh './build-image.sh' 
         }
       }
     }
 
     stage('push'){
       steps {
-        container('runner'){
-          dir('ggus-mon-image'){ 
-            sh './push-image.sh' 
-          }
+        dir('ggus-mon-image'){ 
+          sh './push-image.sh' 
         }
       }
     }
