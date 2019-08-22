@@ -58,12 +58,10 @@ pipeline {
         }
       }
       steps {
-        container('runner') {
-          script {
-            withDockerRegistry([ credentialsId: "dockerhub-enrico", url: "" ]) {
-              dir("${env.DIRECTORY}") {
-                sh "sh push-image-dockerhub.sh"
-              }
+        script {
+          withDockerRegistry([ credentialsId: "dockerhub-enrico", url: "" ]) {
+            dir("${env.DIRECTORY}") {
+              sh "sh push-image-dockerhub.sh"
             }
           }
         }
