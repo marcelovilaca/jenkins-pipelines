@@ -26,7 +26,7 @@ pipeline{
   stages {
     stage('push'){
       steps {
-        container('generic-runner'){
+        container('runner'){
           withCredentials([
             usernamePassword(credentialsId: 'jenkins-nexus', passwordVariable: 'password', usernameVariable: 'username')
           ]) {
