@@ -60,7 +60,7 @@ pipeline{
     }
 
     stage('rebuild DEBs repo'){
-      agent { label 'generic-ubuntu' }
+      agent { label 'ci-ubuntu' }
       steps {
         container('runner'){
           script {
