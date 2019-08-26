@@ -3,14 +3,8 @@
 def kubeLabel = getKubeLabel()
 
 pipeline {
-  agent {
-      kubernetes {
-          label "${kubeLabel}"
-          cloud 'Kube mwdevel'
-          defaultContainer 'runner'
-          inheritFrom 'ci-template'
-      }
-  }
+
+  agent any
 
   options {
     timeout(time: 2, unit: 'HOURS')
@@ -31,8 +25,11 @@ pipeline {
   }
 
   stages {
-    stage('build image'){
-      steps{
+    stage('build image') {
+
+      agent { label 'docker' }
+
+      steps {
         git 'https://github.com/marcocaberletti/docker'
         dir('egi-igtf-cas') {
           sh "./build-image.sh"
@@ -41,11 +38,23 @@ pipeline {
       }
     }
 
-    stage('prepare'){
-      steps {
-          sh "mkdir -p ${env.OUTPUT_DIR}"
-          script {
-            def pod_template = """
+    stage('prepare, run, update secret, archive and clean') {
+
+      agent {
+        kubernetes {
+          label "${kubeLabel}"
+          cloud 'Kube mwdevel'
+          defaultContainer 'runner'
+          inheritFrom 'ci-template'
+        }
+      }
+
+      stages {
+        stage('prepare') {
+          steps {
+            sh "mkdir -p ${env.OUTPUT_DIR}"
+            script {
+              def pod_template = """
 apiVersion: v1
 kind: Pod
 metadata:
@@ -71,57 +80,56 @@ spec:
     - name: TZ
       value: Europe/Rome
 """
-            writeFile file: "${env.POD_FILE}", text: "${pod_template}"
-            stash name: 'podfile', includes: "${env.POD_FILE}"
+              writeFile file: "${env.POD_FILE}", text: "${pod_template}"
+              stash name: 'podfile', includes: "${env.POD_FILE}"
+            }
           }
-      }
-    }
-
-    stage('run'){
-      steps {
-          unstash 'podfile'
-          sh "kubectl apply -f ${env.POD_FILE}"
-
-          sh "echo ${env.POD_NAME} > /tmp/da_pod_name"
-          sh '''
-          pod_status=$(kubectl get pod $(cat /tmp/da_pod_name) -o jsonpath='{.status.phase}')
-          while true; do
-            if [[ "${pod_status}" =~ ^(Succeeded|Failed)$ ]]; then
-              break;
-            fi
-            echo 'Waiting pod...'; sleep 1;
-          done'''
-          sh "kubectl logs -f ${env.POD_NAME}"
-      }
-
-      post { 
-        always { 
-            sh "kubectl delete -f ${env.POD_FILE}"
-        } 
-      }
-    }
-
-    stage('update secret'){
-      steps {
-        sh """
-        kubectl create secret generic ${params.SECRET_NAME} \\
-          --namespace=default --from-file=ca.crt=${env.OUTPUT_DIR}/tls-ca-bundle.pem \\
-          --dry-run -o yaml > ${env.OUTPUT_DIR}/${params.SECRET_NAME}.secret.yaml
-        kubectl --namespace=default delete -f ${env.OUTPUT_DIR}/${params.SECRET_NAME}.secret.yaml --ignore-not-found=true
-        kubectl --namespace=default create -f ${env.OUTPUT_DIR}/${params.SECRET_NAME}.secret.yaml
-        """
-      }
-    }
-
-    stage('archive & clean'){
-      steps {
-        archiveArtifacts "${env.POD_FILE}"
-        sh "cp -rv ${env.OUTPUT_DIR} outputs"
-        dir("outputs"){
-          archiveArtifacts 'tls-ca-bundle.pem'
-          archiveArtifacts '*.yaml' 
         }
-        sh "rm -rfv ${env.OUTPUT_DIR}"
+        stage('run') {
+          steps {
+            unstash 'podfile'
+            sh "kubectl apply -f ${env.POD_FILE}"
+
+            sh "echo ${env.POD_NAME} > /tmp/da_pod_name"
+            sh '''
+            pod_status=$(kubectl get pod $(cat /tmp/da_pod_name) -o jsonpath='{.status.phase}')
+            while true; do
+              if [[ "${pod_status}" =~ ^(Succeeded|Failed)$ ]]; then
+                break;
+              fi
+              echo 'Waiting pod...'; sleep 1;
+              pod_status=$(kubectl get pod $(cat /tmp/da_pod_name) -o jsonpath='{.status.phase}')
+            done'''
+            sh "kubectl logs -f ${env.POD_NAME}"
+          }
+          post { 
+            always { 
+              sh "kubectl delete -f ${env.POD_FILE}"
+            } 
+          }
+        }
+        stage('update secret'){
+          steps {
+            sh """
+kubectl create secret generic ${params.SECRET_NAME} \\
+  --namespace=default --from-file=ca.crt=${env.OUTPUT_DIR}/tls-ca-bundle.pem \\
+  --dry-run -o yaml > ${env.OUTPUT_DIR}/${params.SECRET_NAME}.secret.yaml
+kubectl --namespace=default delete -f ${env.OUTPUT_DIR}/${params.SECRET_NAME}.secret.yaml --ignore-not-found=true
+kubectl --namespace=default create -f ${env.OUTPUT_DIR}/${params.SECRET_NAME}.secret.yaml
+"""
+          }
+        }
+        stage('archive & clean'){
+          steps {
+            archiveArtifacts "${env.POD_FILE}"
+            sh "cp -rv ${env.OUTPUT_DIR} outputs"
+            dir("outputs"){
+              archiveArtifacts 'tls-ca-bundle.pem'
+              archiveArtifacts '*.yaml' 
+            }
+            sh "rm -rfv ${env.OUTPUT_DIR}"
+          }
+        }
       }
     }
   }
