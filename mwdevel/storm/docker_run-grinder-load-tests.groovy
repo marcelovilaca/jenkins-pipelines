@@ -66,6 +66,7 @@ pipeline {
     stage ('run'){
       steps {
         script {
+            sh "docker pull ${image}"
             sh "docker run --name ${name} ${envvars} ${image}"
             sh "docker logs ${name}>grinder.log"
             archive 'grinder.log'
