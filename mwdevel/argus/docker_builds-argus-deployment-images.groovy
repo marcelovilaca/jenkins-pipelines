@@ -1,8 +1,5 @@
 #!/usr/bin/env groovy
 
-@Library('sd')_
-def kubeLabel = getKubeLabel()
-
 def build_image(platform, deployment){
   node('docker') {
     deleteDir()
@@ -16,14 +13,7 @@ def build_image(platform, deployment){
 }
 
 pipeline {
-  agent {
-    kubernetes {
-      label "${kubeLabel}"
-      cloud 'Kube mwdevel'
-      defaultContainer 'runner'
-      inheritFrom 'ci-template'
-    }
-  }
+  agent any
 
   options {
     buildDiscarder(logRotator(numToKeepStr: '5'))
@@ -39,7 +29,7 @@ pipeline {
   stages {
     stage('prepare') {
       steps {
-        git 'https://github.com/marcocaberletti/argus-deployment-test.git'
+        git 'https://github.com/argus-authz/argus-deployment-test.git'
         stash name: "source"
       }
     }
