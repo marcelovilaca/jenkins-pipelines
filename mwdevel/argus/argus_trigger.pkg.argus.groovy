@@ -1,5 +1,13 @@
 #!/usr/bin/env groovy
 
+@Library('sd')_
+def kubeLabel = getKubeLabel()
+
+def build_number = ''
+def pkg_el6
+def pkg_el7
+def job_to_build
+
 properties([
   buildDiscarder(logRotator(numToKeepStr: '5')),
   parameters([
@@ -10,12 +18,7 @@ properties([
   ]),
 ])
 
-def build_number = ''
-def pkg_el6
-def pkg_el7
-def job_to_build
-
-stage('create RPMs'){
+stage('create RPMs') {
   if("${params.INCLUDE_BUILD_NUMBER}" == "1") {
     build_number = new Date().format("yyyyMMddHHmmss")
   }
@@ -51,47 +54,52 @@ stage('create RPMs'){
   }
 }
 
-node('generic'){
-  stage('archive'){
-    def argus_root = "/mnt/packages/repo/argus"
+node('ci-template') {
+  
+  stage('archive') {
 
-    try {
-      step ([$class: 'CopyArtifact',
-        projectName: "${job_to_build}",
-        filter: 'repo/centos6/**',
-        selector: [$class: 'SpecificBuildSelector', buildNumber: "${pkg_el6.number}"]
-      ])
+    container('runner') {
 
-      step ([$class: 'CopyArtifact',
-        projectName: "${job_to_build}",
-        filter: 'repo/centos7/**',
-        selector: [$class: 'SpecificBuildSelector', buildNumber: "${pkg_el7.number}"]
-      ])
+      def argus_root = "/mnt/packages/repo/argus"
 
-      dir('repo') {
-        sh "mkdir -p {el6,el7}/RPMS"
+      try {
+        step ([$class: 'CopyArtifact',
+          projectName: "${job_to_build}",
+          filter: 'repo/centos6/**',
+          selector: [$class: 'SpecificBuildSelector', buildNumber: "${pkg_el6.number}"]
+        ])
 
-        sh "mv centos6/* el6/RPMS/"
-        sh "createrepo el6/RPMS/"
-        sh "repoview el6/RPMS/"
+        step ([$class: 'CopyArtifact',
+          projectName: "${job_to_build}",
+          filter: 'repo/centos7/**',
+          selector: [$class: 'SpecificBuildSelector', buildNumber: "${pkg_el7.number}"]
+        ])
 
-        sh "mv centos7/* el7/RPMS/"
-        sh "createrepo el7/RPMS/"
-        sh "repoview el7/RPMS/"
+        dir('repo') {
+          sh "mkdir -p el6/RPMS"
 
-        sh "mkdir -p ${argus_root}/builds/build_${BUILD_NUMBER}"
-        sh "cp -r el6/ el7/ ${argus_root}/builds/build_${BUILD_NUMBER}/"
-      }
+          sh "mv centos6/* el6/RPMS/"
+          sh "createrepo el6/RPMS/"
+          sh "repoview el6/RPMS/"
 
-      dir("${argus_root}"){
+          sh "mkdir -p el7/RPMS"
+
+          sh "mv centos7/* el7/RPMS/"
+          sh "createrepo el7/RPMS/"
+          sh "repoview el7/RPMS/"
+
+          sh "mkdir -p ${argus_root}/builds/build_${BUILD_NUMBER}"
+          sh "cp -r el6/ el7/ ${argus_root}/builds/build_${BUILD_NUMBER}/"
+        }
+
         sh "rm -vf ${argus_root}/nightly"
-        sh "ln -vs ./builds/build_${BUILD_NUMBER}/ nightly"
-      }
+        sh "ln -vs ${argus_root}/builds/build_${BUILD_NUMBER}/ ${argus_root}/nightly"
 
-      sh "find ${argus_root}/builds/ -maxdepth 1 -type d -ctime +10 -print -exec rm -rf {} \\;"
-    }catch(e) {
-      slackSend color: 'danger', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Failure (<${env.BUILD_URL}|Open>)"
-      throw e
+        sh "find ${argus_root}/builds/ -maxdepth 1 -type d -ctime +10 -print -exec rm -rf {} \\;"
+      } catch(e) {
+        slackSend color: 'danger', message: "${env.JOB_NAME} - #${env.BUILD_NUMBER} Failure (<${env.BUILD_URL}|Open>)"
+        throw e
+      }
     }
   }
 }
