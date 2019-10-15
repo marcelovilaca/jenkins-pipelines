@@ -28,7 +28,7 @@ pipeline {
 
   parameters {
     string(name: 'PKG_TAG_EL6', defaultValue: 'release-el6-1-11-16', description: 'The branch of the EL6 pkg.storm repo' )
-    string(name: 'PKG_TAG_EL7', defaultValue: 'release-el7-1-11-16', description: 'The branch of the EL7 pkg.storm repo' )
+    string(name: 'PKG_TAG_EL7', defaultValue: 'release-el7-1-11-17', description: 'The branch of the EL7 pkg.storm repo' )
   }
 
   environment {
