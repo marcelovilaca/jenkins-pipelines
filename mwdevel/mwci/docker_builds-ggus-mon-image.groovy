@@ -19,7 +19,7 @@ pipeline {
     stage('prepare'){
       steps {
         deleteDir()
-        git 'https://github.com/italiangrid/docker-scripts'
+        git url: 'https://github.com/italiangrid/docker-scripts', branch: 'master'
       }
     }
 
