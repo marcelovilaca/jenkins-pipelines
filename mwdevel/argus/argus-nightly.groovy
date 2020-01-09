@@ -25,7 +25,7 @@ pipeline {
   }
 	
   parameters {
-    string(name: 'PKG_TAG', defaultValue: 'release/1.7.2', description: 'The branch of the pkg.argus repo' )
+    string(name: 'PKG_TAG', defaultValue: 'release/1.7.3', description: 'The branch of the pkg.argus repo' )
   }
 	
   environment {

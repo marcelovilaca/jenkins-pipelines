@@ -16,6 +16,11 @@ pipeline {
     }
   }
 
+  parameters {
+    booleanParam(name: 'RELEASE_EL6_RPMS', defaultValue: true, description: 'Set to true if you want to release el6 rpms from beta repo')
+    booleanParam(name: 'RELEASE_EL7_RPMS', defaultValue: false, description: 'Set to true if you want to release el7 rpms from beta repo')
+  }
+
   options {
     timeout(time: 3, unit: 'HOURS')
     buildDiscarder(logRotator(numToKeepStr: '5'))
@@ -28,11 +33,17 @@ pipeline {
 
   stages {
     stage("create local el6 rpm dir") {
+      when {
+        expression { params.RELEASE_EL6_RPMS == true }
+      }
       steps {
         sh "mkdir -p el6/x86_64"
       }
     }
     stage("download beta el6 rpms") {
+      when {
+        expression { params.RELEASE_EL6_RPMS == true }
+      }
       steps {
         withCredentials([
           usernamePassword(credentialsId: 'jenkins-nexus', passwordVariable: 'password', usernameVariable: 'username')
@@ -60,6 +71,9 @@ pipeline {
       }
     }
     stage("download stable el6 rpms") {
+      when {
+        expression { params.RELEASE_EL6_RPMS == true }
+      }
       steps {
         withCredentials([
           usernamePassword(credentialsId: 'jenkins-nexus', passwordVariable: 'password', usernameVariable: 'username')
@@ -82,12 +96,18 @@ pipeline {
       }
     }
     stage("generate el6 repoview") {
+      when {
+        expression { params.RELEASE_EL6_RPMS == true }
+      }
       steps {
         sh "createrepo el6/x86_64/"
         sh "repoview el6/x86_64/"
       }
     }
     stage("upload el6 beta rpms to stable repo") {
+      when {
+        expression { params.RELEASE_EL6_RPMS == true }
+      }
       steps {
         withCredentials([
           usernamePassword(credentialsId: 'jenkins-nexus', passwordVariable: 'password', usernameVariable: 'username')
@@ -103,6 +123,9 @@ pipeline {
       }
     }
     stage("replace el6 stable repo repodata and repoview files") {
+      when {
+        expression { params.RELEASE_EL6_RPMS == true }
+      }
       steps {
         withCredentials([
           usernamePassword(credentialsId: 'jenkins-nexus', passwordVariable: 'password', usernameVariable: 'username')
@@ -118,11 +141,17 @@ pipeline {
     }
 
     stage("create local el7 rpm dir") {
+      when {
+        expression { params.RELEASE_EL7_RPMS == true }
+      }
       steps {
         sh "mkdir -p el7/x86_64"
       }
     }
     stage("download beta el7 rpms") {
+      when {
+        expression { params.RELEASE_EL7_RPMS == true }
+      }
       steps {
         withCredentials([
           usernamePassword(credentialsId: 'jenkins-nexus', passwordVariable: 'password', usernameVariable: 'username')
@@ -150,6 +179,9 @@ pipeline {
       }
     }
     stage("download stable el7 rpms") {
+      when {
+        expression { params.RELEASE_EL7_RPMS == true }
+      }
       steps {
         withCredentials([
           usernamePassword(credentialsId: 'jenkins-nexus', passwordVariable: 'password', usernameVariable: 'username')
@@ -172,12 +204,18 @@ pipeline {
       }
     }
     stage("generate el7 repoview") {
+      when {
+        expression { params.RELEASE_EL7_RPMS == true }
+      }
       steps {
         sh "createrepo el7/x86_64/"
         sh "repoview el7/x86_64/"
       }
     }
     stage("upload el7 beta rpms to stable repo") {
+      when {
+        expression { params.RELEASE_EL7_RPMS == true }
+      }
       steps {
         withCredentials([
           usernamePassword(credentialsId: 'jenkins-nexus', passwordVariable: 'password', usernameVariable: 'username')
@@ -193,6 +231,9 @@ pipeline {
       }
     }
     stage("replace el7 stable repo repodata and repoview files") {
+      when {
+        expression { params.RELEASE_EL7_RPMS == true }
+      }
       steps {
         withCredentials([
           usernamePassword(credentialsId: 'jenkins-nexus', passwordVariable: 'password', usernameVariable: 'username')
