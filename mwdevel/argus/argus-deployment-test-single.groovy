@@ -31,7 +31,7 @@ pipeline {
     stage('prepare') {
       steps{
         cleanWs notFailBuild: true
-        git 'https://github.com/marcocaberletti/argus-deployment-test.git'
+        git 'https://github.com/argus-authz/argus-deployment-test.git'
       }
     }
 

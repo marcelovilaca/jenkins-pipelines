@@ -27,7 +27,7 @@ pipeline {
   stages {
     stage('run') {
       steps {
-        git 'https://github.com/marcocaberletti/argus-deployment-test.git'
+        git 'https://github.com/argus-authz/argus-deployment-test.git'
         script {
           def url = ''
 
