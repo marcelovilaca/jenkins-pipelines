@@ -26,7 +26,7 @@ pipeline {
   parameters {
     string(name: 'TESTSUITE_BRANCH', defaultValue: 'nightly', description: 'Which branch of storm-testsuite_runner' )
     string(name: 'TESTSUITE_EXCLUDE', defaultValue: "to-be-fixed", description: '')
-    string(name: 'TESTSUITE_SUITE', defaultValue: "tests.srm", description: '')
+    string(name: 'TESTSUITE_SUITE', defaultValue: "tests.srm.commands", description: '')
   }
 
   environment {
