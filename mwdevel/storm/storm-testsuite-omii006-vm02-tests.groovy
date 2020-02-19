@@ -37,22 +37,19 @@ pipeline {
     stage('run-testsuite') {
       steps {
         script {
-          runner_job = build job: "${env.JOB_NAME}/${params.TESTSUITE_BRANCH}", parameters: [
-            string(name: 'STORM_BACKEND_HOSTNAME', value: "omii006-vm03.cnaf.infn.it"),
-            string(name: 'STORM_FRONTEND_HOSTNAME', value: "omii006-vm02.cnaf.infn.it"),
-            string(name: 'STORM_WEBDAV_HOSTNAME', value: "omii006-vm03.cnaf.infn.it"),
-            string(name: 'STORM_GRIDFTP_HOSTNAME', value: "omii006-vm03.cnaf.infn.it"),
-            string(name: 'CDMI_ENDPOINT', value: "omii003-vm01.cnaf.infn.it:8888"),
-            string(name: 'TESTSUITE_EXCLUDE', value: "${params.TESTSUITE_EXCLUDE}"),
-            string(name: 'TESTSUITE_SUITE', value: "${params.TESTSUITE_SUITE}"),
-            string(name: 'STORM_STORAGE_ROOT_DIR', value: "/storage"),
-          ]
-        }
-      }
-    }
-    stage('copy-artifacts') {
-      steps {
-        script {
+          catchError{
+            runner_job = build job: "${env.JOB_NAME}/${params.TESTSUITE_BRANCH}", propagate: false, parameters: [
+              string(name: 'STORM_BACKEND_HOSTNAME', value: "omii006-vm03.cnaf.infn.it"),
+              string(name: 'STORM_FRONTEND_HOSTNAME', value: "omii006-vm02.cnaf.infn.it"),
+              string(name: 'STORM_WEBDAV_HOSTNAME', value: "omii006-vm03.cnaf.infn.it"),
+              string(name: 'STORM_GRIDFTP_HOSTNAME', value: "omii006-vm03.cnaf.infn.it"),
+              string(name: 'CDMI_ENDPOINT', value: "omii003-vm01.cnaf.infn.it:8888"),
+              string(name: 'TESTSUITE_EXCLUDE', value: "${params.TESTSUITE_EXCLUDE}"),
+              string(name: 'TESTSUITE_SUITE', value: "${params.TESTSUITE_SUITE}"),
+              string(name: 'STORM_STORAGE_ROOT_DIR', value: "/storage"),
+            ]
+          }
+        
           step ([$class: 'CopyArtifact',
             projectName: "${env.JOB_NAME}/${params.TESTSUITE_BRANCH}",
             selector: [$class: 'SpecificBuildSelector', buildNumber: "${runner_job.number}"]
@@ -64,7 +61,7 @@ pipeline {
             logFileName: 'log.html',
             otherFiles: '*.png',
             outputFileName: 'output.xml',
-            outputPath: "runner/reports-${runner_job.number}/reports",
+            outputPath: "runner/reports-jenkins-storm-testsuite_runner-nightly-${runner_job.number}/reports",
             passThreshold: 100,
             reportFileName: 'report.html',
             unstableThreshold: 90])
