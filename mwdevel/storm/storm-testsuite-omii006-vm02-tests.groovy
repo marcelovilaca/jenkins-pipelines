@@ -21,7 +21,7 @@ pipeline {
   }
 
   triggers {
-    cron('0 * * * *')
+    cron('*/30 * * * *')
   }
 
   parameters {
