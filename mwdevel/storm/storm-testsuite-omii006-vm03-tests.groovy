@@ -20,7 +20,7 @@ pipeline {
   }
 
   triggers {
-    cron('0 * * * *')
+    cron('@daily')
   }
 
   parameters {
