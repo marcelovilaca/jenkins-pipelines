@@ -13,15 +13,13 @@ pipeline {
     choice (name: 'PLATFORM', choices: 'centos7\ncentos6', description: 'OS platform.')
     string (name: 'TESTSUITE_REPO', defaultValue: 'https://github.com/argus-authz/argus-robot-testsuite', description: '' )
     string (name: 'TESTSUITE_BRANCH', defaultValue: 'master', description: '')
-    choice (name: 'REPO', choices: 'ci\nbeta\nstable', description: 'Repository where download Argus RPMs.')
-    choice (name: 'GH_REPO', choices: 'staging\nproduction', description: 'Github repository holding Argus RPMs.')
+    choice (name: 'REPO', choices: 'nightly\nbeta\nstable', description: 'Repository where download Argus RPMs.')
   }
   
   environment {
     PLATFORM = "${params.PLATFORM}"
     TESTSUITE_REPO = "${params.TESTSUITE_REPO}"
     TESTSUITE_BRANCH = "${params.TESTSUITE_BRANCH}"
-    DOCKER_REGISTRY_HOST = "${env.DOCKER_REGISTRY_HOST}"
   }
 
   stages {
