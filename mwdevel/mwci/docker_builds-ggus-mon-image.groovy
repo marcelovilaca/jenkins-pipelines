@@ -9,7 +9,7 @@ pipeline {
     buildDiscarder(logRotator(numToKeepStr: '5'))
   }
 
-  triggers { cron('@daily') }
+  triggers { cron('@weekly') }
 
   environment {
     DOCKER_REGISTRY_HOST = "${env.DOCKER_REGISTRY_HOST}"
