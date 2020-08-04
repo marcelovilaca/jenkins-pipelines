@@ -77,6 +77,15 @@ wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/gpfs.ext-4.2.3
 
 wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/gpfs.gskit-8.0.50-57.x86_64.rpm
 
+wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/gpfs.base-4.2.3-22.x86_64.rpm
+wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/gpfs.msg.en_US-4.2.3-22.noarch.rpm
+wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/gpfs.docs-4.2.3-22.noarch.rpm
+wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/gpfs.gpl-4.2.3-22.noarch.rpm
+wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/gpfs.ext-4.2.3-22.x86_64.rpm
+
+wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/gpfs.gskit-8.0.50-75.x86_64.rpm
+wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/gpfs.gskit-8.0.50-86.x86_64.rpm
+
 ls yum
 
 createrepo -v yum
