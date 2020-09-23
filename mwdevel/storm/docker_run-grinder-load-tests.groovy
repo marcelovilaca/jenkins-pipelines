@@ -36,7 +36,7 @@ pipeline {
     stage ('prepare') {
       steps {
         script {
-          image = "italiangrid/grinder:latest"
+          image = "italiangrid/storm-load-testsuite:latest"
           echo "image: ${image}"
           name = "${env.JOB_BASE_NAME}-${env.BUILD_NUMBER}"
           echo "name: ${name}"
