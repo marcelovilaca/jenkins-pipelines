@@ -13,10 +13,8 @@ pipeline {
   }
 
   environment {
-    DOCKER_REGISTRY_HOST = "${env.DOCKER_REGISTRY_HOST}"
     REPOSITORY = "https://github.com/italiangrid/grinder-load-testsuite"
     BRANCH = "develop"
-    DIRECTORY = "docker"
   }
 
   stages {
@@ -24,26 +22,29 @@ pipeline {
       steps {
         deleteDir()
         git url: "${env.REPOSITORY}", branch: "${env.BRANCH}"
-        sh "docker pull ${env.DOCKER_REGISTRY_HOST}/italiangrid/storm-testsuite"
-        sh "docker tag ${env.DOCKER_REGISTRY_HOST}/italiangrid/storm-testsuite italiangrid/storm-testsuite"
       }
     }
 
     stage('build') {
       steps {
-        dir("${env.DIRECTORY}") { 
-          sh "docker build -t ${env.DOCKER_REGISTRY_HOST}/italiangrid/grinder ."
+        dir('docker') {
+          sh "sh build-image.sh"
         }
       }
     }
 
-    stage('push') {
+    stage('push-dockerhub') {
       steps {
-        dir("${env.DIRECTORY}") { 
-          sh "docker push ${env.DOCKER_REGISTRY_HOST}/italiangrid/grinder"
+        script {
+          withDockerRegistry([ credentialsId: "dockerhub-enrico", url: "" ]) {
+            dir('docker') {
+              sh "sh push-image-dockerhub.sh"
+            }
+          }
         }
       }
     }
+
   }
 
   post {
