@@ -27,6 +27,7 @@ pipeline {
     string(name: 'TESTSUITE_BRANCH', defaultValue: 'test_one', description: 'Which branch of storm-testsuite_runner' )
     string(name: 'TESTSUITE_EXCLUDE', defaultValue: "to-be-fixedORcdmi", description: '')
     string(name: 'TESTSUITE_SUITE', defaultValue: "tests", description: '')
+    string(name: 'STORM_XMLRPC_TOKEN', defaultValue: "NS4kYAZuR65XJCq", description: '')
   }
 
   environment {
@@ -47,6 +48,7 @@ pipeline {
               string(name: 'TESTSUITE_EXCLUDE', value: "${params.TESTSUITE_EXCLUDE}"),
               string(name: 'TESTSUITE_SUITE', value: "${params.TESTSUITE_SUITE}"),
               string(name: 'STORM_STORAGE_ROOT_DIR', value: "/storage/gemss_test1"),
+              string(name: 'STORM_XMLRPC_TOKEN', value: "${params.STORM_XMLRPC_TOKEN}"),
             ]
           }
         
