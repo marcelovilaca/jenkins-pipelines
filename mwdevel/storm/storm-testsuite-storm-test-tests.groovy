@@ -27,7 +27,6 @@ pipeline {
     string(name: 'TESTSUITE_BRANCH', defaultValue: 'test_one', description: 'Which branch of storm-testsuite_runner' )
     string(name: 'TESTSUITE_EXCLUDE', defaultValue: "to-be-fixedORcdmi", description: '')
     string(name: 'TESTSUITE_SUITE', defaultValue: "tests", description: '')
-    string(name: 'STORM_XMLRPC_TOKEN', defaultValue: "NS4kYAZuR65XJCq", description: '')
   }
 
   environment {
@@ -38,18 +37,22 @@ pipeline {
     stage('run-testsuite') {
       steps {
         script {
-          catchError{
-            runner_job = build job: "${env.JOB_NAME}/${params.TESTSUITE_BRANCH}", propagate: false, parameters: [
-              string(name: 'STORM_BACKEND_HOSTNAME', value: "storm-test.cr.cnaf.infn.it"),
-              string(name: 'STORM_FRONTEND_HOSTNAME', value: "storm-test.cr.cnaf.infn.it"),
-              string(name: 'STORM_WEBDAV_HOSTNAME', value: "transfer-test.cr.cnaf.infn.it"),
-              string(name: 'STORM_GRIDFTP_HOSTNAME', value: "transfer-test.cr.cnaf.infn.it"),
-              string(name: 'CDMI_ENDPOINT', value: ""),
-              string(name: 'TESTSUITE_EXCLUDE', value: "${params.TESTSUITE_EXCLUDE}"),
-              string(name: 'TESTSUITE_SUITE', value: "${params.TESTSUITE_SUITE}"),
-              string(name: 'STORM_STORAGE_ROOT_DIR', value: "/storage/gemss_test1"),
-              string(name: 'STORM_XMLRPC_TOKEN', value: "${params.STORM_XMLRPC_TOKEN}"),
-            ]
+          withCredentials([
+            string(credentialsId: 'storm-test-xmlrpc-token', variable: 'STORM_XMLRPC_TOKEN')
+          ]) {
+            catchError{
+              runner_job = build job: "${env.JOB_NAME}/${params.TESTSUITE_BRANCH}", propagate: false, parameters: [
+                string(name: 'STORM_BACKEND_HOSTNAME', value: "storm-test.cr.cnaf.infn.it"),
+                string(name: 'STORM_FRONTEND_HOSTNAME', value: "storm-test.cr.cnaf.infn.it"),
+                string(name: 'STORM_WEBDAV_HOSTNAME', value: "transfer-test.cr.cnaf.infn.it"),
+                string(name: 'STORM_GRIDFTP_HOSTNAME', value: "transfer-test.cr.cnaf.infn.it"),
+                string(name: 'CDMI_ENDPOINT', value: ""),
+                string(name: 'TESTSUITE_EXCLUDE', value: "${params.TESTSUITE_EXCLUDE}"),
+                string(name: 'TESTSUITE_SUITE', value: "${params.TESTSUITE_SUITE}"),
+                string(name: 'STORM_STORAGE_ROOT_DIR', value: "/storage/gemss_test1"),
+                string(name: 'STORM_XMLRPC_TOKEN', value: "${env.STORM_XMLRPC_TOKEN}"),
+              ]
+            }
           }
         
           step ([$class: 'CopyArtifact',
