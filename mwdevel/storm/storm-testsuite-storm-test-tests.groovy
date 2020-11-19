@@ -66,7 +66,7 @@ pipeline {
             logFileName: 'log.html',
             otherFiles: '*.png',
             outputFileName: 'output.xml',
-            outputPath: "runner/reports-jenkins-storm-testsuite_runner-nightly-${runner_job.number}/reports",
+            outputPath: "runner/reports-jenkins-storm-testsuite_runner-test_one-${runner_job.number}/reports",
             passThreshold: 100,
             reportFileName: 'report.html',
             unstableThreshold: 90])
