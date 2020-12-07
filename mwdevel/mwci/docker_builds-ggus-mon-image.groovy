@@ -25,7 +25,7 @@ pipeline {
 
     stage('build'){
       steps {
-        dir('ggus-mon-image'){ 
+        dir('ggus-mon-image') { 
           sh './build-image.sh' 
         }
       }
@@ -33,8 +33,10 @@ pipeline {
 
     stage('push'){
       steps {
-        dir('ggus-mon-image'){ 
-          sh './push-image.sh' 
+        dir('ggus-mon-image') {
+          withDockerRegistry([ credentialsId: "dockerhub-enrico", url: "" ]) {
+            sh './push-image.sh'
+          }
         }
       }
     }
