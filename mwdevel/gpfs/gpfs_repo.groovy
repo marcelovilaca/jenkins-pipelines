@@ -31,38 +31,6 @@ pipeline {
 
 mkdir yum
 
-wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/OLD/gpfs.base-3.4.0-17.x86_64.rpm
-wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/OLD/gpfs.msg.en_US-3.4.0-17.noarch.rpm
-wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/OLD/gpfs.docs-3.4.0-17.noarch.rpm
-wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/OLD/gpfs.gpl-3.4.0-17.noarch.rpm
-
-wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/OLD/gpfs.base-3.5.0-31.x86_64.rpm
-wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/OLD/gpfs.msg.en_US-3.5.0-31.noarch.rpm
-wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/OLD/gpfs.docs-3.5.0-31.noarch.rpm
-wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/OLD/gpfs.gpl-3.5.0-31.noarch.rpm
-
-wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/OLD/gpfs.base-4.1.1-12.x86_64.rpm
-wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/OLD/gpfs.msg.en_US-4.1.1-12.noarch.rpm
-wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/OLD/gpfs.docs-4.1.1-12.noarch.rpm
-wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/OLD/gpfs.gpl-4.1.1-12.noarch.rpm
-wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/OLD/gpfs.ext-4.1.1-12.x86_64.rpm
-wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/OLD/gpfs.gplbin-2.6.32-504.8.1.el6.x86_64-4.1.1-12.x86_64.rpm
-wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/OLD/gpfs.gplbin-3.10.0-327.36.3.el7.x86_64-4.1.1-12.x86_64.rpm
-
-wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/OLD/gpfs.base-4.1.1-14.x86_64.rpm
-wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/OLD/gpfs.msg.en_US-4.1.1-14.noarch.rpm
-wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/OLD/gpfs.docs-4.1.1-14.noarch.rpm
-wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/OLD/gpfs.gpl-4.1.1-14.noarch.rpm
-wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/OLD/gpfs.ext-4.1.1-14.x86_64.rpm
-
-wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/gpfs.gskit-8.0.50-47.x86_64.rpm
-
-wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/OLD/gpfs.base-4.1.1-16.x86_64.rpm
-wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/OLD/gpfs.msg.en_US-4.1.1-16.noarch.rpm
-wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/OLD/gpfs.docs-4.1.1-16.noarch.rpm
-wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/OLD/gpfs.gpl-4.1.1-16.noarch.rpm
-wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/OLD/gpfs.ext-4.1.1-16.x86_64.rpm
-
 wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/gpfs.base-4.2.0-3.x86_64.rpm
 wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/gpfs.msg.en_US-4.2.0-3.noarch.rpm
 wget -P yum http://os-server.cnaf.infn.it/distro/Storage/GPFS-pkg/gpfs.docs-4.2.0-3.noarch.rpm
