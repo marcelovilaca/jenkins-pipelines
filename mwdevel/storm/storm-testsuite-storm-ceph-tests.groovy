@@ -46,7 +46,7 @@ pipeline {
               string(name: 'CDMI_ENDPOINT', value: "storm-ceph.cloud.cnaf.infn.it:8888"),
               string(name: 'TESTSUITE_EXCLUDE', value: "${params.TESTSUITE_EXCLUDE}"),
               string(name: 'TESTSUITE_SUITE', value: "${params.TESTSUITE_SUITE}"),
-              string(name: 'STORM_STORAGE_ROOT_DIR', value: "/storage"),
+              string(name: 'STORM_STORAGE_ROOT_DIR', value: "/storage/ceph"),
             ]
           }
         
